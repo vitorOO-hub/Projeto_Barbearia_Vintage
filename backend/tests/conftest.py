@@ -3,9 +3,17 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.api.v1.auth import limiter as auth_limiter
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Reset rate limiter state before each test to avoid cumulative rate limit hits."""
+    auth_limiter.reset()
+    yield
 
 
 @pytest.fixture
