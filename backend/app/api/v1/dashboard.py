@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps import get_current_user
 from app.db.session import get_db
 from app.models import Appointment, Service
+from app.models.appointment import AppointmentStatus, ACTIVE_STATUSES
 from app.schemas.dashboard import DashboardSummary, ServiceCount
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"], dependencies=[Depends(get_current_user)])
@@ -18,12 +19,18 @@ async def summary(db: AsyncSession = Depends(get_db)):
     week_start = today - timedelta(days=today.weekday())
 
     today_count = (
-        await db.execute(select(func.count()).select_from(Appointment).where(Appointment.appointment_date == today))
+        await db.execute(
+            select(func.count()).select_from(Appointment).where(
+                (Appointment.appointment_date == today) & (Appointment.status.in_(ACTIVE_STATUSES))
+            )
+        )
     ).scalar_one()
 
     week_count = (
         await db.execute(
-            select(func.count()).select_from(Appointment).where(Appointment.appointment_date >= week_start)
+            select(func.count()).select_from(Appointment).where(
+                (Appointment.appointment_date >= week_start) & (Appointment.status.in_(ACTIVE_STATUSES))
+            )
         )
     ).scalar_one()
 
@@ -31,6 +38,7 @@ async def summary(db: AsyncSession = Depends(get_db)):
         await db.execute(
             select(Service.name, func.count(Appointment.id).label("total"))
             .join(Appointment, Appointment.service_id == Service.id)
+            .where(Appointment.status == AppointmentStatus.concluido)
             .group_by(Service.name)
             .order_by(func.count(Appointment.id).desc())
             .limit(5)
