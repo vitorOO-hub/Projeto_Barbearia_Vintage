@@ -52,7 +52,9 @@ describe("Agenda page", () => {
     renderAgenda();
     await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
     expect(screen.getByText("14:00")).toBeInTheDocument();
-    expect(screen.getByText("Agendado")).toBeInTheDocument();
+    // Scoped to <span> so this matches only the StatusBadge, not the status <select>'s
+    // "Agendado" <option>, which renders the same text but is a different element type.
+    expect(screen.getByText("Agendado", { selector: "span" })).toBeInTheDocument();
   });
 
   it("allows changing status via the dropdown to any of the 4 states", async () => {
