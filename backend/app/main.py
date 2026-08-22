@@ -6,6 +6,7 @@ from slowapi.errors import RateLimitExceeded
 from app.api.v1.appointments import router as appointments_router
 from app.api.v1.auth import limiter, router as auth_router
 from app.api.v1.clients import router as clients_router
+from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.services import router as services_router
 from app.core.config import settings
 
@@ -26,6 +27,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(clients_router, prefix="/api/v1")
 app.include_router(services_router, prefix="/api/v1")
 app.include_router(appointments_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 
 
 @app.get("/health")
