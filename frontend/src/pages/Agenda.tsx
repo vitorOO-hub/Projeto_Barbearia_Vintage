@@ -20,10 +20,10 @@ function todayISO(): string {
 }
 
 const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [
-  { value: "agendado", label: "Marcar como agendado" },
-  { value: "concluido", label: "Marcar como concluído" },
-  { value: "cancelado", label: "Marcar como cancelado" },
-  { value: "nao_compareceu", label: "Marcar como não compareceu" },
+  { value: "agendado", label: "Agendado" },
+  { value: "concluido", label: "Concluído" },
+  { value: "cancelado", label: "Cancelado" },
+  { value: "nao_compareceu", label: "Não compareceu" },
 ];
 
 export function Agenda() {
