@@ -89,3 +89,51 @@ async def test_delete_client_is_soft_delete(client, db_session):
     check = await client.get("/api/v1/clients?include_inactive=true", headers=headers)
     target = next(c for c in check.json() if c["id"] == client_id)
     assert target["active"] is False
+
+
+@pytest.mark.anyio
+async def test_update_nonexistent_client_returns_404(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    import uuid
+    fake_id = uuid.uuid4()
+    response = await client.put(f"/api/v1/clients/{fake_id}", json={"notes": "test"}, headers=headers)
+    assert response.status_code == 404
+    assert "Cliente não encontrado" in response.json()["detail"]
+
+
+@pytest.mark.anyio
+async def test_delete_nonexistent_client_returns_404(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    import uuid
+    fake_id = uuid.uuid4()
+    response = await client.delete(f"/api/v1/clients/{fake_id}", headers=headers)
+    assert response.status_code == 404
+    assert "Cliente não encontrado" in response.json()["detail"]
+
+
+@pytest.mark.anyio
+async def test_update_client_preserves_unset_fields(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    # Create client with name and email
+    resp = await client.post(
+        "/api/v1/clients",
+        json={"name": "João Silva", "email": "joao@example.com"},
+        headers=headers
+    )
+    client_id = resp.json()["id"]
+    original_name = resp.json()["name"]
+    original_email = resp.json()["email"]
+
+    # Update only notes (partial update)
+    response = await client.put(
+        f"/api/v1/clients/{client_id}",
+        json={"notes": "Prefere corte curto"},
+        headers=headers
+    )
+    assert response.status_code == 200
+    updated = response.json()
+    # Verify the updated field
+    assert updated["notes"] == "Prefere corte curto"
+    # Verify unset fields were preserved
+    assert updated["name"] == original_name
+    assert updated["email"] == original_email
