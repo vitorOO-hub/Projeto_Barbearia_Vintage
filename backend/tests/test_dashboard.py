@@ -22,6 +22,8 @@ async def test_dashboard_summary_counts_and_top_services(client, db_session):
             Appointment(client_id=c.id, service_id=corte.id, appointment_date=date(2026, 8, 22), appointment_time=time(9, 0), status=AppointmentStatus.concluido),
             Appointment(client_id=c.id, service_id=corte.id, appointment_date=date(2026, 8, 22), appointment_time=time(10, 0), status=AppointmentStatus.concluido),
             Appointment(client_id=c.id, service_id=barba.id, appointment_date=date(2026, 8, 22), appointment_time=time(11, 0), status=AppointmentStatus.agendado),
+            Appointment(client_id=c.id, service_id=corte.id, appointment_date=date(2026, 8, 22), appointment_time=time(12, 0), status=AppointmentStatus.cancelado),
+            Appointment(client_id=c.id, service_id=barba.id, appointment_date=date(2026, 8, 22), appointment_time=time(13, 0), status=AppointmentStatus.nao_compareceu),
         ]
     )
     await db_session.commit()
@@ -32,6 +34,9 @@ async def test_dashboard_summary_counts_and_top_services(client, db_session):
     response = await client.get("/api/v1/dashboard/summary", headers=headers)
     assert response.status_code == 200
     body = response.json()
+    # Should count 3 active appointments (2 concluido + 1 agendado), excluding cancelado and nao_compareceu
     assert body["appointments_today"] == 3
+    # top_services should only include concluido appointments, so only Corte with count 2
+    assert len(body["top_services"]) == 1
     assert body["top_services"][0]["service_name"] == "Corte"
     assert body["top_services"][0]["count"] == 2
