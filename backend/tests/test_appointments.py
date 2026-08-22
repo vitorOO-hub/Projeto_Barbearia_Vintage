@@ -70,6 +70,34 @@ async def test_cancelled_slot_can_be_rebooked(client, db_session):
 
 
 @pytest.mark.anyio
+async def test_update_appointment_same_slot_does_not_conflict_with_itself(client, db_session):
+    headers, c, s = await _setup(client, db_session)
+    resp = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    appt_id = resp.json()["id"]
+
+    response = await client.put(
+        f"/api/v1/appointments/{appt_id}",
+        json={
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+            "service_id": str(s.id),
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["appointment_time"] == "14:00:00"
+
+
+@pytest.mark.anyio
 async def test_list_appointments_by_date_ordered_by_time(client, db_session):
     headers, c, s = await _setup(client, db_session)
     await client.post(

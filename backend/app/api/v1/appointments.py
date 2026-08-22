@@ -3,6 +3,7 @@ from datetime import date as date_type
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select, and_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_current_user
@@ -39,7 +40,7 @@ async def _has_conflict(
     if exclude_id is not None:
         query = query.where(Appointment.id != exclude_id)
     result = await db.execute(query)
-    return result.scalar_one_or_none() is not None
+    return result.scalars().first() is not None
 
 
 async def _get_appointment_or_404(appointment_id: uuid.UUID, db: AsyncSession) -> Appointment:
@@ -62,7 +63,11 @@ async def create_appointment(
 
     appt = Appointment(**data.model_dump(), created_by=current_user.id)
     db.add(appt)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise CONFLICT_ERROR
     await db.refresh(appt)
 
     client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
@@ -124,7 +129,11 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
 
     for field, value in updates.items():
         setattr(appt, field, value)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise CONFLICT_ERROR
     await db.refresh(appt)
     return appt
 
