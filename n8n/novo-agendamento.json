@@ -1,0 +1,247 @@
+{
+  "name": "Barbearia Vintage – Confirmação de Agendamento",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "novo-agendamento",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2b1768b0-1a0b-4fc8-93ca-e9ff6cc09449",
+      "name": "Webhook Novo Agendamento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        96
+      ],
+      "webhookId": "5dabc364-807a-43be-985e-dade531dae35",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "JCb4nedDoNsUQhor",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "data_formatada",
+              "name": "data_formatada",
+              "type": "string",
+              "value": "={{ $json.body.appointment_date ? DateTime.fromISO($json.body.appointment_date).setLocale('pt-BR').toFormat('dd/MM/yyyy') : 'a confirmar' }}"
+            },
+            {
+              "id": "dia_semana",
+              "name": "dia_semana",
+              "type": "string",
+              "value": "={{ $json.body.appointment_date ? DateTime.fromISO($json.body.appointment_date).setLocale('pt-BR').toFormat('cccc') : '' }}"
+            },
+            {
+              "id": "hora_formatada",
+              "name": "hora_formatada",
+              "type": "string",
+              "value": "={{ $json.body.appointment_time ? $json.body.appointment_time.substring(0, 5) : 'a confirmar' }}"
+            },
+            {
+              "id": "status_pt",
+              "name": "status_pt",
+              "type": "string",
+              "value": "={{ ({ agendado: 'Agendado', concluido: 'Concluído', cancelado: 'Cancelado', nao_compareceu: 'Não compareceu' })[$json.body.status] || $json.body.status }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "06c90e24-762d-4686-82be-5c5367ba9090",
+      "name": "Formatar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "email-not-empty",
+              "leftValue": "={{ $json.body.client_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "33918485-8d48-4c41-abde-8b719f4dcb0b",
+      "name": "Cliente tem e-mail?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "2020.vitor.oliveira@gmail.com",
+        "toEmail": "={{ $json.body.client_email }}",
+        "subject": "=Confirmação de agendamento – Barbearia Vintage",
+        "html": "=<p>Olá, {{  $json.body.client_name }}!</p>\n<p>Seu horário na <strong>Barbearia Vintage</strong> está confirmado:</p>\n<ul>\n  <li><strong>Serviço:</strong> {{  $json.body.service_name }}</li>\n  <li><strong>Data:</strong> {{  $json.data_formatada }} ({{  $json.dia_semana }})</li>\n  <li><strong>Horário:</strong> {{  $json.hora_formatada }}</li>\n  <li><strong>Status:</strong> {{  $json.status_pt }}</li>\n</ul>\n<p>Se precisar remarcar ou cancelar, é só entrar em contato com a gente.</p>\n<p>Até breve!<br>\nEquipe Barbearia Vintage</p>",
+        "options": {}
+      },
+      "id": "1a67939f-9839-4bd0-9a97-a8e83b0c11e3",
+      "name": "Enviar E-mail",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        672,
+        0
+      ],
+      "webhookId": "d1606d6e-d990-4ecf-a6b9-44c59a600b95",
+      "credentials": {
+        "smtp": {
+          "id": "bNYVO6k7XCSiNshE",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"ok\":true,\"notified\":true}",
+        "options": {}
+      },
+      "id": "d65b9dca-89a3-4c5e-9587-5bdc0a1130f2",
+      "name": "Responder OK (enviado)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "bc327579-ebf5-49d5-a308-d797296c8316",
+      "name": "Sem E-mail (não notifica)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"ok\":true,\"notified\":false}",
+        "options": {}
+      },
+      "id": "af34da0e-a232-4a52-88e3-a88d264f24ab",
+      "name": "Responder OK (sem e-mail)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        192
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Novo Agendamento": {
+      "main": [
+        [
+          {
+            "node": "Formatar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Dados": {
+      "main": [
+        [
+          {
+            "node": "Cliente tem e-mail?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente tem e-mail?": {
+      "main": [
+        [
+          {
+            "node": "Enviar E-mail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sem E-mail (não notifica)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar E-mail": {
+      "main": [
+        [
+          {
+            "node": "Responder OK (enviado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sem E-mail (não notifica)": {
+      "main": [
+        [
+          {
+            "node": "Responder OK (sem e-mail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1df60920-14d9-4673-9920-aef10a62c2b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "745334489539b5ff16a8efc08bebbe535551d691a43de20e7277579c8ab6985e"
+  },
+  "nodeGroups": [],
+  "id": "zoKwyHumVkcg4J2q",
+  "tags": []
+}

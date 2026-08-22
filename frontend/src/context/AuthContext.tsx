@@ -1,0 +1,50 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { apiClient, setAuthToken } from "../api/client";
+
+interface UserOut {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface AuthContextValue {
+  user: UserOut | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<UserOut | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient
+      .get<UserOut>("/api/v1/auth/me")
+      .then((res) => setUser(res.data))
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  async function login(email: string, password: string) {
+    const response = await apiClient.post<{ access_token: string }>("/api/v1/auth/login", { email, password });
+    setAuthToken(response.data.access_token);
+    const me = await apiClient.get<UserOut>("/api/v1/auth/me");
+    setUser(me.data);
+  }
+
+  function logout() {
+    setAuthToken(null);
+    setUser(null);
+  }
+
+  return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth deve ser usado dentro de AuthProvider");
+  return ctx;
+}
