@@ -16,3 +16,9 @@ FastAPI + PostgreSQL (Neon) + Alembic.
 ```
 pytest -v
 ```
+
+## Deploy (Render)
+
+- Root directory: `backend`
+- Free tier cold start mitigation: agendamento externo faz `GET /health` a cada 10 minutos (ver `n8n/` ou UptimeRobot configurado).
+- Rodar `alembic upgrade head` antes do primeiro deploy.
