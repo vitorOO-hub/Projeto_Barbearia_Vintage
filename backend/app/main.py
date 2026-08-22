@@ -4,6 +4,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.auth import limiter, router as auth_router
+from app.api.v1.clients import router as clients_router
 from app.core.config import settings
 
 app = FastAPI(title="Barbearia Vintage API")
@@ -20,6 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(clients_router, prefix="/api/v1")
 
 
 @app.get("/health")
