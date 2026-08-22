@@ -210,3 +210,9 @@ __marimo__/
 # Internal planning docs (never commit — working references only)
 AGENT_BRIEF_barbearia_vintage.md
 docs/superpowers/
+
+# Node / frontend
+node_modules/
+dist/
+.vercel/
+*.local
