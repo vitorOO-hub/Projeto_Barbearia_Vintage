@@ -1,5 +1,5 @@
 import uuid
-from datetime import date as date_type
+from datetime import date as date_type, datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select, and_
@@ -24,25 +24,42 @@ router = APIRouter(prefix="/appointments", tags=["appointments"], dependencies=[
 CONFLICT_ERROR = HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe um agendamento para este horário.")
 
 
+def _end_time(appointment_time, duration_minutes: int) -> datetime:
+    return datetime.combine(date_type.today(), appointment_time) + timedelta(minutes=duration_minutes)
+
+
 async def _has_conflict(
     db: AsyncSession,
     appointment_date,
     appointment_time,
     barber_id,
+    duration_minutes: int,
     exclude_id: uuid.UUID | None = None,
 ) -> bool:
-    query = select(Appointment).where(
-        and_(
-            Appointment.appointment_date == appointment_date,
-            Appointment.appointment_time == appointment_time,
-            Appointment.barber_id == barber_id,
-            Appointment.status.in_(ACTIVE_STATUSES),
+    query = (
+        select(Appointment, Service.duration_minutes)
+        .join(Service, Appointment.service_id == Service.id)
+        .where(
+            and_(
+                Appointment.appointment_date == appointment_date,
+                Appointment.barber_id == barber_id,
+                Appointment.status.in_(ACTIVE_STATUSES),
+            )
         )
     )
     if exclude_id is not None:
         query = query.where(Appointment.id != exclude_id)
     result = await db.execute(query)
-    return result.scalars().first() is not None
+
+    new_start = datetime.combine(date_type.today(), appointment_time)
+    new_end = _end_time(appointment_time, duration_minutes)
+
+    for appt, existing_duration in result.all():
+        existing_start = datetime.combine(date_type.today(), appt.appointment_time)
+        existing_end = _end_time(appt.appointment_time, existing_duration)
+        if new_start < existing_end and existing_start < new_end:
+            return True
+    return False
 
 
 async def _get_appointment_or_404(appointment_id: uuid.UUID, db: AsyncSession) -> Appointment:
@@ -60,7 +77,11 @@ async def create_appointment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if await _has_conflict(db, data.appointment_date, data.appointment_time, data.barber_id):
+    service_row = (await db.execute(select(Service).where(Service.id == data.service_id))).scalar_one_or_none()
+    if service_row is None:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado.")
+
+    if await _has_conflict(db, data.appointment_date, data.appointment_time, data.barber_id, service_row.duration_minutes):
         raise CONFLICT_ERROR
 
     appt = Appointment(**data.model_dump(), created_by=current_user.id)
@@ -73,7 +94,6 @@ async def create_appointment(
     await db.refresh(appt)
 
     client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
-    service_row = (await db.execute(select(Service).where(Service.id == appt.service_id))).scalar_one()
     background_tasks.add_task(
         notify_n8n,
         {
@@ -138,25 +158,63 @@ async def list_appointments(
 
 
 @router.put("/{appointment_id}", response_model=AppointmentOut)
-async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate, db: AsyncSession = Depends(get_db)):
+async def update_appointment(
+    appointment_id: uuid.UUID,
+    data: AppointmentUpdate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     appt = await _get_appointment_or_404(appointment_id, db)
     updates = data.model_dump(exclude_unset=True)
 
     new_date = updates.get("appointment_date", appt.appointment_date)
     new_time = updates.get("appointment_time", appt.appointment_time)
     new_barber_id = updates.get("barber_id", appt.barber_id)
-    if (new_date, new_time, new_barber_id) != (appt.appointment_date, appt.appointment_time, appt.barber_id):
-        if await _has_conflict(db, new_date, new_time, new_barber_id, exclude_id=appt.id):
+    new_service_id = updates.get("service_id", appt.service_id)
+    time_changed = (new_date, new_time) != (appt.appointment_date, appt.appointment_time)
+
+    service_row = None
+    if (new_date, new_time, new_barber_id, new_service_id) != (
+        appt.appointment_date,
+        appt.appointment_time,
+        appt.barber_id,
+        appt.service_id,
+    ):
+        service_row = (await db.execute(select(Service).where(Service.id == new_service_id))).scalar_one_or_none()
+        if service_row is None:
+            raise HTTPException(status_code=404, detail="Serviço não encontrado.")
+        if await _has_conflict(db, new_date, new_time, new_barber_id, service_row.duration_minutes, exclude_id=appt.id):
             raise CONFLICT_ERROR
 
     for field, value in updates.items():
         setattr(appt, field, value)
+
+    if time_changed:
+        appt.confirmation_email_sent = False
+
     try:
         await db.commit()
     except IntegrityError:
         await db.rollback()
         raise CONFLICT_ERROR
     await db.refresh(appt)
+
+    if time_changed:
+        client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
+        if service_row is None:
+            service_row = (await db.execute(select(Service).where(Service.id == appt.service_id))).scalar_one()
+        background_tasks.add_task(
+            notify_n8n,
+            {
+                "appointment_id": str(appt.id),
+                "client_name": client_row.name,
+                "client_email": client_row.email,
+                "service_name": service_row.name,
+                "appointment_date": appt.appointment_date.isoformat(),
+                "appointment_time": appt.appointment_time.isoformat(),
+                "status": appt.status.value,
+            },
+        )
     return appt
 
 
