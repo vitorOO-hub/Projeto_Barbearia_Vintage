@@ -31,7 +31,7 @@ describe("ClientFormModal", () => {
     });
   });
 
-  it("shows a placeholder example for the phone field", () => {
+  it("shows a placeholder on the phone field", () => {
     render(
       <ClientFormModal
         initialValues={{ name: "João Silva", email: "joao@x.com", phone: null, notes: null }}
@@ -40,7 +40,7 @@ describe("ClientFormModal", () => {
       />
     );
 
-    expect(screen.getByPlaceholderText("(11) 957645612")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Telefone")).toBeInTheDocument();
   });
 
   it("disables the save button when the name is cleared", async () => {

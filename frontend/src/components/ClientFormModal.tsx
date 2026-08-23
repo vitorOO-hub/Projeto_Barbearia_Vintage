@@ -50,7 +50,7 @@ export function ClientFormModal({ initialValues, onSubmit, onClose }: ClientForm
           id="client-phone"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          placeholder="(11) 957645612"
+          placeholder="Telefone"
           className="mt-1 w-full rounded border px-3 py-2"
         />
 
