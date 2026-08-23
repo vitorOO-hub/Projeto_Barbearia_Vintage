@@ -22,21 +22,42 @@ function Probe() {
 
 describe("AuthContext", () => {
   beforeEach(() => {
+    vi.mocked(apiClient.post).mockRejectedValue({ isAxiosError: true, response: { status: 401 } });
     vi.mocked(apiClient.get).mockRejectedValue({ isAxiosError: true, response: undefined });
   });
 
-  it("starts with no user and calls /auth/me once on mount", async () => {
+  it("has no user when there is no valid refresh cookie on mount, and never calls /auth/me", async () => {
     render(
       <AuthProvider>
         <Probe />
       </AuthProvider>
     );
-    await waitFor(() => expect(apiClient.get).toHaveBeenCalledWith("/api/v1/auth/me"));
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith("/api/v1/auth/refresh"));
     expect(screen.getByTestId("user").textContent).toBe("sem-usuario");
+    expect(apiClient.get).not.toHaveBeenCalledWith("/api/v1/auth/me");
+  });
+
+  it("restores the session from the refresh cookie on mount", async () => {
+    vi.mocked(apiClient.post).mockImplementation((url: string) => {
+      if (url === "/api/v1/auth/refresh") return Promise.resolve({ data: { access_token: "tok-refreshed" } });
+      return Promise.reject(new Error(`unexpected url ${url}`));
+    });
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { id: "1", name: "Marcelo", email: "marcelo@barbearia.com" } });
+
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("marcelo@barbearia.com"));
   });
 
   it("login stores the token and sets the user from the response", async () => {
-    vi.mocked(apiClient.post).mockResolvedValue({ data: { access_token: "tok123" } });
+    vi.mocked(apiClient.post).mockImplementation((url: string) => {
+      if (url === "/api/v1/auth/login") return Promise.resolve({ data: { access_token: "tok123" } });
+      return Promise.reject({ isAxiosError: true, response: { status: 401 } });
+    });
     vi.mocked(apiClient.get).mockResolvedValue({ data: { id: "1", name: "Marcelo", email: "marcelo@barbearia.com" } });
 
     render(
@@ -49,8 +70,12 @@ describe("AuthContext", () => {
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("marcelo@barbearia.com"));
   });
 
-  it("logout clears the user", async () => {
-    vi.mocked(apiClient.post).mockResolvedValue({ data: { access_token: "tok123" } });
+  it("logout clears the user and notifies the server", async () => {
+    vi.mocked(apiClient.post).mockImplementation((url: string) => {
+      if (url === "/api/v1/auth/login") return Promise.resolve({ data: { access_token: "tok123" } });
+      if (url === "/api/v1/auth/logout") return Promise.resolve({ data: null });
+      return Promise.reject({ isAxiosError: true, response: { status: 401 } });
+    });
     vi.mocked(apiClient.get).mockResolvedValue({ data: { id: "1", name: "Marcelo", email: "marcelo@barbearia.com" } });
 
     render(
@@ -63,5 +88,6 @@ describe("AuthContext", () => {
 
     await userEvent.click(screen.getByText("sair"));
     expect(screen.getByTestId("user").textContent).toBe("sem-usuario");
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith("/api/v1/auth/logout"));
   });
 });

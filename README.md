@@ -93,7 +93,8 @@ docs/             Documentação adicional do projeto
 ## Segurança e boas práticas
 
 - Senhas armazenadas com hash `bcrypt`, nunca em texto plano
-- Tokens JWT assinados (HS256) com expiração configurável, mantidos em memória no frontend (não em `localStorage`), reduzindo exposição a XSS
+- Access token JWT (HS256), curto (padrão 45 min), mantido em memória no frontend (não em `localStorage`), reduzindo exposição a XSS
+- Refresh token em cookie `httpOnly` (inacessível via JavaScript), usado para renovar a sessão sem exigir login de novo enquanto o usuário estiver ativo; access e refresh token carregam um claim de tipo próprio, então um não pode ser usado no lugar do outro
 - Controle de acesso por papel (`is_admin`) validado sempre no backend — o frontend só evita renderizar telas que a API recusaria
 - Rate limiting no endpoint de login contra força bruta
 - CORS restrito a uma lista explícita de origens permitidas
