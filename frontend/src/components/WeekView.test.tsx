@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WeekView } from "./WeekView";
 import type { AppointmentDetail } from "../api/appointments";
+
+let originalScrollIntoView: (options?: ScrollIntoViewOptions) => void;
 
 function makeAppointment(overrides: Partial<AppointmentDetail>): AppointmentDetail {
   return {
@@ -39,6 +41,20 @@ function baseProps() {
 }
 
 describe("WeekView", () => {
+  beforeEach(() => {
+    // Store the original scrollIntoView if it exists
+    originalScrollIntoView = Element.prototype.scrollIntoView;
+    // Mock scrollIntoView for all tests
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    // Restore the original scrollIntoView
+    if (originalScrollIntoView) {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
   it("shows a loading skeleton instead of a blank screen while loading", () => {
     render(<WeekView {...baseProps()} isLoading />);
     expect(screen.getByLabelText("Carregando calendário")).toBeInTheDocument();
@@ -82,5 +98,12 @@ describe("WeekView", () => {
   it("highlights the column for today", () => {
     render(<WeekView {...baseProps()} />);
     expect(screen.getByText("Ter 25")).toHaveClass("bg-gray-900");
+  });
+
+  it("scrolls the today column into view when the week is displayed", () => {
+    render(<WeekView {...baseProps()} />);
+
+    const mockScrollIntoView = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+    expect(mockScrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ inline: "start" }));
   });
 });

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { AppointmentDetail } from "../api/appointments";
 import { getWeekDays, TIME_SLOTS, slotForTime, toISODate } from "../lib/week";
 
@@ -31,6 +32,12 @@ export function WeekView({
 }: WeekViewProps) {
   const days = getWeekDays(weekStart);
   const todayISO = toISODate(today);
+
+  const todayColumnRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    todayColumnRef.current?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+  }, [todayISO]);
 
   function appointmentsFor(dayISO: string, slot: string): AppointmentDetail[] {
     return appointments.filter(
@@ -70,6 +77,7 @@ export function WeekView({
             return (
               <div
                 key={dayISO}
+                ref={isToday ? todayColumnRef : undefined}
                 className={`border-b p-2 text-center text-sm font-medium ${
                   isToday ? "bg-gray-900 text-white" : "text-gray-700"
                 }`}
