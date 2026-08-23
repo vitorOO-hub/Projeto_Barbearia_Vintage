@@ -82,7 +82,7 @@ describe("AppointmentFormModal", () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText("Este barbeiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
+    expect(await screen.findByText("Este cabeleireiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
   });
 
   it("re-checks availability against the new date when the Dia field is changed", async () => {
@@ -119,14 +119,14 @@ describe("AppointmentFormModal", () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText("Este barbeiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
+    expect(await screen.findByText("Este cabeleireiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
 
     const dateInput = screen.getByLabelText("Dia");
     await userEvent.clear(dateInput);
     await userEvent.type(dateInput, "2026-08-26");
 
     expect(await screen.findByText("Horário disponível")).toBeInTheDocument();
-    expect(screen.queryByText("Este barbeiro já tem atendimento das 10:00 – 10:45")).not.toBeInTheDocument();
+    expect(screen.queryByText("Este cabeleireiro já tem atendimento das 10:00 – 10:45")).not.toBeInTheDocument();
   });
 
   it("excludes its own id from the availability check when editing an existing appointment", async () => {

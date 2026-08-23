@@ -62,7 +62,7 @@ def _format_conflict_detail(conflict_time: time, conflict_duration_minutes: int)
     end_minutes = start_minutes + conflict_duration_minutes
     start_str = f"{start_minutes // 60:02d}:{start_minutes % 60:02d}"
     end_str = f"{(end_minutes // 60) % 24:02d}:{end_minutes % 60:02d}"
-    return f"Este barbeiro já tem um atendimento das {start_str} às {end_str}. Escolha outro horário ou outro barbeiro."
+    return f"Este cabeleireiro já tem um atendimento das {start_str} às {end_str}. Escolha outro horário ou outro cabeleireiro."
 
 
 async def _get_appointment_or_404(appointment_id: uuid.UUID, db: AsyncSession) -> Appointment:
@@ -106,7 +106,7 @@ async def create_appointment(
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este barbeiro já tem um agendamento neste horário.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este cabeleireiro já tem um agendamento neste horário.")
     await db.refresh(appt)
 
     client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
@@ -243,7 +243,7 @@ async def update_appointment(
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este barbeiro já tem um agendamento neste horário.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este cabeleireiro já tem um agendamento neste horário.")
     await db.refresh(appt)
 
     if time_changed:

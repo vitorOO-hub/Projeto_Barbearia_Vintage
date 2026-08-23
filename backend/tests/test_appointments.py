@@ -76,8 +76,8 @@ async def test_create_appointment_conflict_same_slot_returns_409(client, db_sess
     second = await client.post("/api/v1/appointments", json=payload, headers=headers)
     assert second.status_code == 409
     assert second.json()["detail"] == (
-        "Este barbeiro já tem um atendimento das 14:00 às 14:30. "
-        "Escolha outro horário ou outro barbeiro."
+        "Este cabeleireiro já tem um atendimento das 14:00 às 14:30. "
+        "Escolha outro horário ou outro cabeleireiro."
     )
 
 
@@ -133,8 +133,8 @@ async def test_create_appointment_partial_overlap_returns_409_with_conflict_wind
     )
     assert second.status_code == 409
     assert second.json()["detail"] == (
-        "Este barbeiro já tem um atendimento das 14:00 às 14:30. "
-        "Escolha outro horário ou outro barbeiro."
+        "Este cabeleireiro já tem um atendimento das 14:00 às 14:30. "
+        "Escolha outro horário ou outro cabeleireiro."
     )
 
 
