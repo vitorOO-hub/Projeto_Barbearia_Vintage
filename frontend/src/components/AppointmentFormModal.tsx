@@ -52,10 +52,11 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
 
   const selectedService = services.find((s) => s.id === serviceId);
 
-  const availabilityEnabled = Boolean(barberId && serviceId && time);
+  const availabilityEnabled = Boolean(barberId && serviceId && appointmentDate && time);
   const { data: availability } = useQuery({
-    queryKey: ["check-availability", barberId, serviceId, date, time],
-    queryFn: () => checkAvailability({ barberId, serviceId, date, time: `${time}:00`, appointmentId: initialValues?.id }),
+    queryKey: ["check-availability", barberId, serviceId, appointmentDate, time],
+    queryFn: () =>
+      checkAvailability({ barberId, serviceId, date: appointmentDate, time: `${time}:00`, appointmentId: initialValues?.id }),
     enabled: availabilityEnabled,
   });
 
