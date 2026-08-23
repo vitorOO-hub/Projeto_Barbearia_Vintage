@@ -74,6 +74,7 @@ export function WeekView({
           {days.map((day) => {
             const dayISO = toISODate(day);
             const isToday = dayISO === todayISO;
+            const dayMonth = `${String(day.getDate()).padStart(2, "0")}/${String(day.getMonth() + 1).padStart(2, "0")}`;
             return (
               <div
                 key={dayISO}
@@ -82,7 +83,7 @@ export function WeekView({
                   isToday ? "bg-gray-900 text-white" : "text-gray-700"
                 }`}
               >
-                {WEEKDAY_LABELS[day.getDay()]} {String(day.getDate()).padStart(2, "0")}
+                {WEEKDAY_LABELS[day.getDay()]} {dayMonth}
               </div>
             );
           })}

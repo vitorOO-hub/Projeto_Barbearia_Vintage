@@ -97,7 +97,7 @@ describe("WeekView", () => {
 
   it("highlights the column for today", () => {
     render(<WeekView {...baseProps()} />);
-    expect(screen.getByText("Ter 25")).toHaveClass("bg-gray-900");
+    expect(screen.getByText("Ter 25/08")).toHaveClass("bg-gray-900");
   });
 
   it("scrolls the today column into view when the week is displayed", () => {
