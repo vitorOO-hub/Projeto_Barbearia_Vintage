@@ -1,0 +1,196 @@
+/*
+  Sistema visual da Barbearia Vintage.
+  Paleta simples (creme, tinta, latão, verde-floresta, tijolo, azul-ardósia)
+  e componentes reutilizáveis, seguindo as heurísticas de Nielsen:
+  consistência, reconhecimento em vez de memorização, prevenção de erros,
+  visibilidade do status do sistema e design estético e minimalista.
+*/
+
+@layer base {
+  body {
+    @apply bg-cream text-ink font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-ink;
+  }
+
+  a {
+    @apply text-brass-dark;
+  }
+  a:hover {
+    @apply text-brass-dark underline;
+  }
+
+  /* Visibilidade do foco para navegação por teclado (heurística: prevenção de erros) */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-brass;
+  }
+}
+
+@layer components {
+  /* Estrutura de página */
+  .page-shell {
+    @apply mx-auto max-w-3xl p-4 sm:p-6;
+  }
+
+  .page-header {
+    @apply flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-ink;
+  }
+
+  .section-title {
+    @apply mt-8 font-display text-lg font-semibold text-ink;
+  }
+
+  /* Navegação */
+  .nav-bar {
+    @apply flex items-center gap-1 border-b border-line bg-paper px-4 py-3 shadow-card sm:gap-2;
+  }
+
+  .nav-link {
+    @apply rounded-md px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink;
+  }
+
+  .nav-link-active {
+    @apply bg-ink text-cream hover:bg-ink hover:text-cream;
+  }
+
+  /* Botões (reconhecimento em vez de memorização: ação primária sempre igual) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-ink text-cream hover:bg-ink/90;
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-paper text-ink hover:bg-cream;
+  }
+
+  .btn-ghost {
+    @apply btn px-3 py-1.5 text-ink-soft hover:bg-cream hover:text-ink;
+  }
+
+  .btn-danger {
+    @apply btn bg-brick text-white hover:bg-brick-dark;
+  }
+
+  /* Ações de texto dentro de listas */
+  .link-action {
+    @apply text-sm font-medium text-ink-soft transition-colors hover:text-ink hover:underline;
+  }
+
+  .link-danger {
+    @apply text-sm font-medium text-brick transition-colors hover:text-brick-dark hover:underline;
+  }
+
+  /* Formulários */
+  .field-label {
+    @apply block text-sm font-medium text-ink-soft;
+  }
+
+  .field-input {
+    @apply mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink placeholder:text-ink-faint;
+  }
+
+  .field-error {
+    @apply mt-1 text-sm text-brick;
+  }
+
+  .field-hint {
+    @apply mt-1 text-sm text-ink-soft;
+  }
+
+  .checkbox-label {
+    @apply flex items-center gap-2 text-sm font-medium text-ink-soft;
+  }
+
+  /* Cartões e listas */
+  .card {
+    @apply rounded-lg border border-line bg-paper p-4 shadow-card;
+  }
+
+  .list-row {
+    @apply flex items-center justify-between gap-3 border-b border-line py-3 last:border-b-0;
+  }
+
+  .empty-state {
+    @apply rounded-lg border border-dashed border-line bg-paper px-4 py-6 text-center text-ink-soft;
+  }
+
+  .loading-state {
+    @apply px-1 py-6 text-ink-soft;
+  }
+
+  /* Modais */
+  .modal-backdrop {
+    @apply fixed inset-0 z-40 flex items-center justify-center bg-ink/50 p-4;
+  }
+
+  .modal-panel {
+    @apply w-full max-w-md rounded-lg border border-line bg-paper p-6 shadow-panel;
+  }
+
+  .modal-title {
+    @apply font-display text-lg font-semibold text-ink;
+  }
+
+  .modal-actions {
+    @apply mt-6 flex justify-end gap-3;
+  }
+
+  /* Emblemas de status (cores discretas, com significado consistente) */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .badge-info {
+    @apply badge bg-slate-soft text-slate-dark;
+  }
+
+  .badge-success {
+    @apply badge bg-forest-soft text-forest-dark;
+  }
+
+  .badge-neutral {
+    @apply badge bg-line/60 text-ink-soft;
+  }
+
+  .badge-danger {
+    @apply badge bg-brick-soft text-brick-dark;
+  }
+
+  /* Avisos (toasts) */
+  .toast-base {
+    @apply rounded-md px-4 py-2.5 text-sm font-medium text-white shadow-panel;
+  }
+
+  .toast-success {
+    @apply toast-base bg-forest-dark;
+  }
+
+  .toast-error {
+    @apply toast-base bg-brick-dark;
+  }
+
+  /* Tela de autenticação */
+  .auth-shell {
+    @apply flex min-h-screen items-center justify-center bg-cream p-4;
+  }
+
+  .auth-card {
+    @apply w-full max-w-sm space-y-4 rounded-lg border border-line bg-paper p-8 shadow-panel;
+  }
+}

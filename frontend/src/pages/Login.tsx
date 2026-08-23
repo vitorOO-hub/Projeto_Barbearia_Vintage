@@ -34,38 +34,32 @@ export function Login() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4 rounded-lg bg-white p-8 shadow">
-        <h1 className="text-xl font-semibold text-gray-800">Barbearia Vintage</h1>
+    <div className="auth-shell">
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-card">
+        <div className="text-center">
+          <h1 className="font-display text-2xl font-semibold text-ink">Barbearia Vintage</h1>
+          <p className="mt-1 text-sm text-ink-soft">Entre para gerenciar a agenda</p>
+        </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="field-label">
             E-mail
           </label>
-          <input id="email" type="email" {...register("email")} className="mt-1 w-full rounded border px-3 py-2" />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+          <input id="email" type="email" {...register("email")} className="field-input" />
+          {errors.email && <p className="field-error">{errors.email.message}</p>}
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="password" className="field-label">
             Senha
           </label>
-          <input
-            id="password"
-            type="password"
-            {...register("password")}
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-          {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+          <input id="password" type="password" {...register("password")} className="field-input" />
+          {errors.password && <p className="field-error">{errors.password.message}</p>}
         </div>
 
-        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+        {serverError && <p className="field-error">{serverError}</p>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded bg-gray-900 py-2 text-white disabled:opacity-50"
-        >
+        <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
           Entrar
         </button>
       </form>

@@ -36,12 +36,12 @@ export function Servicos() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <h1 className="text-xl font-semibold">Serviços</h1>
+    <div className="page-shell">
+      <h1 className="page-title">Serviços</h1>
 
-      <div className="mt-4 flex flex-wrap items-end gap-2">
+      <div className="card mt-4 flex flex-wrap items-end gap-2">
         <div>
-          <label htmlFor="service-name" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="service-name" className="field-label">
             Nome
           </label>
           <input
@@ -49,11 +49,11 @@ export function Servicos() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: Corte de cabelo"
-            className="mt-1 rounded border px-3 py-2"
+            className="field-input"
           />
         </div>
         <div>
-          <label htmlFor="service-duration" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="service-duration" className="field-label">
             Duração em minutos
           </label>
           <input
@@ -62,11 +62,11 @@ export function Servicos() {
             value={duration}
             onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
             placeholder="Ex: 30"
-            className="mt-1 w-36 rounded border px-3 py-2"
+            className="field-input w-36"
           />
         </div>
         <div>
-          <label htmlFor="service-price" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="service-price" className="field-label">
             Preço em reais
           </label>
           <input
@@ -75,35 +75,29 @@ export function Servicos() {
             value={price}
             onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))}
             placeholder="R$ 0,00"
-            className="mt-1 w-36 rounded border px-3 py-2"
+            className="field-input w-36"
           />
         </div>
-        <button
-          onClick={() => createMutation.mutate()}
-          disabled={!name || duration === "" || price === ""}
-          className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
-        >
+        <button onClick={() => createMutation.mutate()} disabled={!name || duration === "" || price === ""} className="btn-primary">
           Salvar serviço
         </button>
       </div>
 
-      <ul className="mt-4 divide-y">
+      <ul className="mt-4">
         {services.map((s) => (
-          <li key={s.id} className="flex items-center justify-between py-3">
+          <li key={s.id} className="list-row">
             <div>
-              <p className="font-medium">{s.name}</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-ink">{s.name}</p>
+              <p className="text-sm text-ink-soft">
                 {s.duration_minutes} min · {formatCurrencyBR(s.price)}
               </p>
             </div>
-            <button
-              onClick={() => toggleMutation.mutate({ id: s.id, active: !s.active })}
-              className="text-sm text-gray-700 hover:underline"
-            >
+            <button onClick={() => toggleMutation.mutate({ id: s.id, active: !s.active })} className="link-action">
               {s.active ? "Desativar" : "Ativar"}
             </button>
           </li>
         ))}
+        {services.length === 0 && <p className="empty-state">Nenhum serviço cadastrado.</p>}
       </ul>
     </div>
   );

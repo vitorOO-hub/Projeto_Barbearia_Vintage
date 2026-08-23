@@ -3,23 +3,23 @@ import { render, screen } from "@testing-library/react";
 import { StatusBadge } from "./StatusBadge";
 
 describe("StatusBadge", () => {
-  it("renders green for concluido", () => {
+  it("renders success style for concluido", () => {
     render(<StatusBadge status="concluido" />);
-    expect(screen.getByText("Concluído")).toHaveClass("bg-green-100");
+    expect(screen.getByText("Concluído")).toHaveClass("badge-success");
   });
 
-  it("renders blue for agendado", () => {
+  it("renders info style for agendado", () => {
     render(<StatusBadge status="agendado" />);
-    expect(screen.getByText("Agendado")).toHaveClass("bg-blue-100");
+    expect(screen.getByText("Agendado")).toHaveClass("badge-info");
   });
 
-  it("renders gray for cancelado", () => {
+  it("renders neutral style for cancelado", () => {
     render(<StatusBadge status="cancelado" />);
-    expect(screen.getByText("Cancelado")).toHaveClass("bg-gray-100");
+    expect(screen.getByText("Cancelado")).toHaveClass("badge-neutral");
   });
 
-  it("renders red for nao_compareceu", () => {
+  it("renders danger style for nao_compareceu", () => {
     render(<StatusBadge status="nao_compareceu" />);
-    expect(screen.getByText("Não compareceu")).toHaveClass("bg-red-100");
+    expect(screen.getByText("Não compareceu")).toHaveClass("badge-danger");
   });
 });
