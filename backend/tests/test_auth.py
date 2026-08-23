@@ -70,3 +70,66 @@ async def test_me_returns_current_user_with_valid_token(client, db_session):
     assert response.status_code == 200
     assert response.json()["email"] == "marcelo@barbearia.com"
     assert response.json()["is_admin"] is False
+
+
+@pytest.mark.anyio
+async def test_login_sets_httponly_refresh_cookie(client, db_session):
+    user = User(name="Marcelo", email="marcelo@barbearia.com", password_hash=hash_password("senha123"))
+    db_session.add(user)
+    await db_session.commit()
+
+    response = await client.post("/api/v1/auth/login", json={"email": "marcelo@barbearia.com", "password": "senha123"})
+    assert "refresh_token" in response.cookies
+    set_cookie_header = response.headers.get("set-cookie", "")
+    assert "HttpOnly" in set_cookie_header
+
+
+@pytest.mark.anyio
+async def test_refresh_issues_new_access_token_from_cookie(client, db_session):
+    user = User(name="Marcelo", email="marcelo@barbearia.com", password_hash=hash_password("senha123"))
+    db_session.add(user)
+    await db_session.commit()
+
+    await client.post("/api/v1/auth/login", json={"email": "marcelo@barbearia.com", "password": "senha123"})
+
+    response = await client.post("/api/v1/auth/refresh")
+    assert response.status_code == 200
+    new_token = response.json()["access_token"]
+
+    me = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {new_token}"})
+    assert me.status_code == 200
+    assert me.json()["email"] == "marcelo@barbearia.com"
+
+
+@pytest.mark.anyio
+async def test_refresh_without_cookie_returns_401(client):
+    response = await client.post("/api/v1/auth/refresh")
+    assert response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_refresh_rejects_access_token_used_as_refresh_cookie(client, db_session):
+    user = User(name="Marcelo", email="marcelo@barbearia.com", password_hash=hash_password("senha123"))
+    db_session.add(user)
+    await db_session.commit()
+
+    login_resp = await client.post("/api/v1/auth/login", json={"email": "marcelo@barbearia.com", "password": "senha123"})
+    access_token = login_resp.json()["access_token"]
+
+    client.cookies.set("refresh_token", access_token)
+    response = await client.post("/api/v1/auth/refresh")
+    assert response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_logout_clears_refresh_cookie(client, db_session):
+    user = User(name="Marcelo", email="marcelo@barbearia.com", password_hash=hash_password("senha123"))
+    db_session.add(user)
+    await db_session.commit()
+
+    await client.post("/api/v1/auth/login", json={"email": "marcelo@barbearia.com", "password": "senha123"})
+    logout_resp = await client.post("/api/v1/auth/logout")
+    assert logout_resp.status_code == 204
+
+    refresh_resp = await client.post("/api/v1/auth/refresh")
+    assert refresh_resp.status_code == 401

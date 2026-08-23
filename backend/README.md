@@ -35,7 +35,9 @@ API REST em **FastAPI** com **SQLAlchemy assíncrono**, banco **PostgreSQL** e m
    |---|---|
    | `DATABASE_URL` | String de conexão assíncrona do Postgres (`postgresql+asyncpg://...`) |
    | `JWT_SECRET` | Segredo usado para assinar os tokens JWT — gere um valor aleatório longo, nunca reaproveite o do exemplo |
-   | `JWT_EXPIRE_MINUTES` | Tempo de expiração do token de login, em minutos (padrão: `45`) |
+   | `JWT_EXPIRE_MINUTES` | Tempo de expiração do access token, em minutos (padrão: `45`) |
+   | `REFRESH_TOKEN_EXPIRE_DAYS` | Validade do refresh token (cookie httpOnly), em dias (padrão: `7`) |
+   | `ENVIRONMENT` | `development` em dev local, `production` em produção — controla se o cookie de refresh exige HTTPS (`Secure`) |
    | `N8N_WEBHOOK_URL` | URL do webhook do n8n que envia o e-mail de confirmação de agendamento (opcional em dev) |
    | `N8N_SHARED_SECRET` | Segredo enviado no header `X-Webhook-Secret` para o n8n validar a origem da chamada |
    | `ALLOWED_ORIGINS` | Lista de origens permitidas por CORS, separadas por vírgula (ex.: `http://localhost:5173`) |

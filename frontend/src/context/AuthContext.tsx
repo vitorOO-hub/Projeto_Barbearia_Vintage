@@ -12,7 +12,7 @@ interface AuthContextValue {
   user: UserOut | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -22,11 +22,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    apiClient
-      .get<UserOut>("/api/v1/auth/me")
-      .then((res) => setUser(res.data))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    async function restoreSession() {
+      try {
+        const refreshed = await apiClient.post<{ access_token: string }>("/api/v1/auth/refresh");
+        setAuthToken(refreshed.data.access_token);
+        const me = await apiClient.get<UserOut>("/api/v1/auth/me");
+        setUser(me.data);
+      } catch {
+        setAuthToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    restoreSession();
   }, []);
 
   async function login(email: string, password: string) {
@@ -36,9 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me.data);
   }
 
-  function logout() {
+  async function logout() {
     setAuthToken(null);
     setUser(null);
+    try {
+      await apiClient.post("/api/v1/auth/logout");
+    } catch {
+      // O estado local ja foi limpo; falha ao avisar o servidor nao deve travar o usuario.
+    }
   }
 
   return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>;

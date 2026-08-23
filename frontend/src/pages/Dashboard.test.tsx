@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { Dashboard } from "./Dashboard";
 
 vi.mock("../api/client", async () => {
   const actual = await vi.importActual<typeof import("../api/client")>("../api/client");
-  return { ...actual, apiClient: { get: vi.fn() } };
+  return { ...actual, apiClient: { get: vi.fn(), post: vi.fn() } };
 });
 
 function renderDashboard() {
@@ -29,6 +29,13 @@ const SUMMARY = {
 };
 
 describe("Dashboard page", () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.post).mockImplementation((url: string) => {
+      if (url === "/api/v1/auth/refresh") return Promise.resolve({ data: { access_token: "tok-refreshed" } });
+      return Promise.reject(new Error(`unexpected url ${url}`));
+    });
+  });
+
   it("shows today's and this week's counts plus top services", async () => {
     vi.mocked(apiClient.get).mockImplementation((url: string) => {
       if (url === "/api/v1/auth/me") return Promise.resolve({ data: { id: "u1", name: "Marcelo", email: "m@x.com", is_admin: false } });

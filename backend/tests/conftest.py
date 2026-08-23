@@ -47,5 +47,5 @@ async def db_session():
 @pytest.fixture
 async def client(db_session):
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="https://test") as ac:
         yield ac
