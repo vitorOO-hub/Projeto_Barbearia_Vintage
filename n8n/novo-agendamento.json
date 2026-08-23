@@ -102,25 +102,36 @@
     },
     {
       "parameters": {
-        "fromEmail": "2020.vitor.oliveira@gmail.com",
-        "toEmail": "={{ $json.body.client_email }}",
-        "subject": "=Confirmação de agendamento – Barbearia Vintage",
-        "html": "=<p>Olá, {{  $json.body.client_name }}!</p>\n<p>Seu horário na <strong>Barbearia Vintage</strong> está confirmado:</p>\n<ul>\n  <li><strong>Serviço:</strong> {{  $json.body.service_name }}</li>\n  <li><strong>Data:</strong> {{  $json.data_formatada }} ({{  $json.dia_semana }})</li>\n  <li><strong>Horário:</strong> {{  $json.hora_formatada }}</li>\n  <li><strong>Status:</strong> {{  $json.status_pt }}</li>\n</ul>\n<p>Se precisar remarcar ou cancelar, é só entrar em contato com a gente.</p>\n<p>Até breve!<br>\nEquipe Barbearia Vintage</p>",
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  from: \"Barbearia Vintage <onboarding@resend.dev>\",\n  to: [$json.body.client_email],\n  subject: \"Confirmação de agendamento – Barbearia Vintage\",\n  html: `<p>Olá, ${$json.body.client_name}!</p>\\n<p>Seu horário na <strong>Barbearia Vintage</strong> está confirmado:</p>\\n<ul>\\n  <li><strong>Serviço:</strong> ${$json.body.service_name}</li>\\n  <li><strong>Data:</strong> ${$json.data_formatada} (${$json.dia_semana})</li>\\n  <li><strong>Horário:</strong> ${$json.hora_formatada}</li>\\n  <li><strong>Status:</strong> ${$json.status_pt}</li>\\n</ul>\\n<p>Se precisar remarcar ou cancelar, é só entrar em contato com a gente.</p>\\n<p>Até breve!<br>\\nEquipe Barbearia Vintage</p>`\n}) }}",
         "options": {}
       },
       "id": "1a67939f-9839-4bd0-9a97-a8e83b0c11e3",
       "name": "Enviar E-mail",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         672,
         0
       ],
-      "webhookId": "d1606d6e-d990-4ecf-a6b9-44c59a600b95",
       "credentials": {
-        "smtp": {
-          "id": "bNYVO6k7XCSiNshE",
-          "name": "SMTP account"
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Resend API"
         }
       }
     },
