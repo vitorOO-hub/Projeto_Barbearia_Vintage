@@ -57,10 +57,12 @@ API REST em **FastAPI** com **SQLAlchemy assíncrono**, banco **PostgreSQL** e m
 6. Suba o servidor de desenvolvimento (com auto-reload):
 
    ```bash
-   uvicorn app.main:app --reload
+   uvicorn app.main:app --reload --port 8001
    ```
 
-   A API sobe em `http://localhost:8000`. Documentação interativa (Swagger) em `http://localhost:8000/docs`.
+   > A porta `8001` é só uma convenção deste projeto (a `8000` costuma estar ocupada por outra coisa no ambiente de dev). Pode usar outra porta livre, desde que ajuste `VITE_API_URL` no `.env` do frontend para combinar.
+
+   A API sobe em `http://localhost:8001`. Documentação interativa (Swagger) em `http://localhost:8001/docs`.
 
 ## Testes
 

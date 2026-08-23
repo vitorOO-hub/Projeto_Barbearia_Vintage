@@ -69,7 +69,7 @@ Frontend e backend são projetos independentes que só se comunicam por HTTP —
 
 O projeto tem duas partes que rodam separadamente e precisam estar ativas ao mesmo tempo:
 
-1. **[backend/README.md](./backend/README.md)** — configurar `.env`, instalar dependências, rodar migrações e subir a API em `http://localhost:8000`
+1. **[backend/README.md](./backend/README.md)** — configurar `.env`, instalar dependências, rodar migrações e subir a API em `http://localhost:8001`
 2. **[frontend/README.md](./frontend/README.md)** — configurar `.env` (apontando para a API acima), instalar dependências e subir a interface em `http://localhost:5173`
 
 ## Testes

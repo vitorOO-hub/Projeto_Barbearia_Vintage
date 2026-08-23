@@ -23,7 +23,7 @@ SPA em **React + TypeScript**, construída com **Vite** e estilizada com **Tailw
 
    | Variável | Descrição |
    |---|---|
-   | `VITE_API_URL` | URL base da API do backend (ex.: `http://localhost:8000` em dev) |
+   | `VITE_API_URL` | URL base da API do backend (ex.: `http://localhost:8001` em dev) |
 
    > Confirme que a porta em `VITE_API_URL` é a mesma em que o backend está rodando — se um dos dois lados mudar de porta, ajuste o `.env` correspondente. O `.env` nunca deve ser commitado (já está no `.gitignore`).
 
