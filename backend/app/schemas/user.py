@@ -9,3 +9,4 @@ class UserOut(BaseModel):
     id: uuid.UUID
     name: str
     email: str
+    is_admin: bool

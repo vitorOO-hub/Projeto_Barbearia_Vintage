@@ -69,3 +69,4 @@ async def test_me_returns_current_user_with_valid_token(client, db_session):
     response = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json()["email"] == "marcelo@barbearia.com"
+    assert response.json()["is_admin"] is False
