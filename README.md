@@ -87,7 +87,6 @@ cd frontend && npm test
 ```
 backend/          API REST (FastAPI)
 frontend/         Interface web (React)
-n8n/              Workflow exportado do n8n (referência)
 docs/             Documentação adicional do projeto
 ```
 
