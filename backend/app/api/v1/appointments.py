@@ -1,5 +1,5 @@
 import uuid
-from datetime import date as date_type
+from datetime import date as date_type, time
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select, and_
@@ -21,28 +21,47 @@ from app.schemas.appointment import (
 
 router = APIRouter(prefix="/appointments", tags=["appointments"], dependencies=[Depends(get_current_user)])
 
-CONFLICT_ERROR = HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe um agendamento para este horário.")
-
 
 async def _has_conflict(
     db: AsyncSession,
     appointment_date,
     appointment_time,
     barber_id,
+    duration_minutes: int,
     exclude_id: uuid.UUID | None = None,
-) -> bool:
-    query = select(Appointment).where(
-        and_(
-            Appointment.appointment_date == appointment_date,
-            Appointment.appointment_time == appointment_time,
-            Appointment.barber_id == barber_id,
-            Appointment.status.in_(ACTIVE_STATUSES),
+) -> Appointment | None:
+    query = (
+        select(Appointment, Service.duration_minutes)
+        .join(Service, Appointment.service_id == Service.id)
+        .where(
+            and_(
+                Appointment.appointment_date == appointment_date,
+                Appointment.barber_id == barber_id,
+                Appointment.status.in_(ACTIVE_STATUSES),
+            )
         )
     )
     if exclude_id is not None:
         query = query.where(Appointment.id != exclude_id)
     result = await db.execute(query)
-    return result.scalars().first() is not None
+
+    new_start = appointment_time.hour * 60 + appointment_time.minute
+    new_end = new_start + duration_minutes
+
+    for existing_appt, existing_duration in result.all():
+        existing_start = existing_appt.appointment_time.hour * 60 + existing_appt.appointment_time.minute
+        existing_end = existing_start + existing_duration
+        if existing_start < new_end and existing_end > new_start:
+            return existing_appt
+    return None
+
+
+def _format_conflict_detail(conflict_time: time, conflict_duration_minutes: int) -> str:
+    start_minutes = conflict_time.hour * 60 + conflict_time.minute
+    end_minutes = start_minutes + conflict_duration_minutes
+    start_str = f"{start_minutes // 60:02d}:{start_minutes % 60:02d}"
+    end_str = f"{(end_minutes // 60) % 24:02d}:{end_minutes % 60:02d}"
+    return f"Este barbeiro já tem um atendimento das {start_str} às {end_str}. Escolha outro horário ou outro barbeiro."
 
 
 async def _get_appointment_or_404(appointment_id: uuid.UUID, db: AsyncSession) -> Appointment:
@@ -60,8 +79,17 @@ async def create_appointment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if await _has_conflict(db, data.appointment_date, data.appointment_time, data.barber_id):
-        raise CONFLICT_ERROR
+    service_row = (await db.execute(select(Service).where(Service.id == data.service_id))).scalar_one()
+
+    conflict = await _has_conflict(
+        db, data.appointment_date, data.appointment_time, data.barber_id, service_row.duration_minutes
+    )
+    if conflict is not None:
+        conflict_service = (await db.execute(select(Service).where(Service.id == conflict.service_id))).scalar_one()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=_format_conflict_detail(conflict.appointment_time, conflict_service.duration_minutes),
+        )
 
     appt = Appointment(**data.model_dump(), created_by=current_user.id)
     db.add(appt)
@@ -69,11 +97,10 @@ async def create_appointment(
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise CONFLICT_ERROR
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este barbeiro já tem um agendamento neste horário.")
     await db.refresh(appt)
 
     client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
-    service_row = (await db.execute(select(Service).where(Service.id == appt.service_id))).scalar_one()
     background_tasks.add_task(
         notify_n8n,
         {
@@ -145,9 +172,23 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
     new_date = updates.get("appointment_date", appt.appointment_date)
     new_time = updates.get("appointment_time", appt.appointment_time)
     new_barber_id = updates.get("barber_id", appt.barber_id)
-    if (new_date, new_time, new_barber_id) != (appt.appointment_date, appt.appointment_time, appt.barber_id):
-        if await _has_conflict(db, new_date, new_time, new_barber_id, exclude_id=appt.id):
-            raise CONFLICT_ERROR
+    new_service_id = updates.get("service_id", appt.service_id)
+    if (new_date, new_time, new_barber_id, new_service_id) != (
+        appt.appointment_date,
+        appt.appointment_time,
+        appt.barber_id,
+        appt.service_id,
+    ):
+        new_service_row = (await db.execute(select(Service).where(Service.id == new_service_id))).scalar_one()
+        conflict = await _has_conflict(
+            db, new_date, new_time, new_barber_id, new_service_row.duration_minutes, exclude_id=appt.id
+        )
+        if conflict is not None:
+            conflict_service = (await db.execute(select(Service).where(Service.id == conflict.service_id))).scalar_one()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=_format_conflict_detail(conflict.appointment_time, conflict_service.duration_minutes),
+            )
 
     for field, value in updates.items():
         setattr(appt, field, value)
@@ -155,7 +196,7 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise CONFLICT_ERROR
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este barbeiro já tem um agendamento neste horário.")
     await db.refresh(appt)
     return appt
 

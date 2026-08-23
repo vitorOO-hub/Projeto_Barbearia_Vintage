@@ -55,7 +55,10 @@ async def test_create_appointment_conflict_same_slot_returns_409(client, db_sess
 
     second = await client.post("/api/v1/appointments", json=payload, headers=headers)
     assert second.status_code == 409
-    assert second.json()["detail"] == "Já existe um agendamento para este horário."
+    assert second.json()["detail"] == (
+        "Este barbeiro já tem um atendimento das 14:00 às 14:30. "
+        "Escolha outro horário ou outro barbeiro."
+    )
 
 
 @pytest.mark.anyio
@@ -77,6 +80,98 @@ async def test_same_slot_different_barbers_does_not_conflict(client, db_session)
 
     second = await client.post("/api/v1/appointments", json={**payload, "barber_id": str(other_barber.id)}, headers=headers)
     assert second.status_code == 201
+
+
+@pytest.mark.anyio
+async def test_create_appointment_partial_overlap_returns_409_with_conflict_window(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    # s has duration_minutes=30 (see _setup: Service(name="Corte", duration_minutes=30, price=40))
+    first = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    assert first.status_code == 201
+
+    # Starts at 14:15, inside the first appointment's 14:00-14:30 window -> overlaps
+    second = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:15:00",
+        },
+        headers=headers,
+    )
+    assert second.status_code == 409
+    assert second.json()["detail"] == (
+        "Este barbeiro já tem um atendimento das 14:00 às 14:30. "
+        "Escolha outro horário ou outro barbeiro."
+    )
+
+
+@pytest.mark.anyio
+async def test_create_appointment_adjacent_slots_do_not_conflict(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    first = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    assert first.status_code == 201
+
+    # Starts exactly when the first ends (14:30) -> no overlap
+    second = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:30:00",
+        },
+        headers=headers,
+    )
+    assert second.status_code == 201
+
+
+@pytest.mark.anyio
+async def test_update_appointment_excludes_itself_from_overlap_check(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    resp = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    appt_id = resp.json()["id"]
+
+    # Editing only the time, still overlapping only with itself -> should succeed
+    update = await client.put(
+        f"/api/v1/appointments/{appt_id}",
+        json={"appointment_time": "14:10:00"},
+        headers=headers,
+    )
+    assert update.status_code == 200
 
 
 @pytest.mark.anyio
