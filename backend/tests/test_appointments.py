@@ -242,3 +242,66 @@ async def test_delete_appointment(client, db_session):
 
     listing = await client.get("/api/v1/appointments?date=2026-08-25", headers=headers)
     assert listing.json() == []
+
+
+@pytest.mark.anyio
+async def test_list_appointments_by_date_range(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
+            "appointment_date": "2026-08-24", "appointment_time": "10:00:00",
+        },
+        headers=headers,
+    )
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
+            "appointment_date": "2026-08-26", "appointment_time": "09:00:00",
+        },
+        headers=headers,
+    )
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
+            "appointment_date": "2026-08-30", "appointment_time": "09:00:00",
+        },
+        headers=headers,
+    )
+
+    response = await client.get(
+        "/api/v1/appointments?start_date=2026-08-23&end_date=2026-08-29", headers=headers
+    )
+    assert response.status_code == 200
+    dates = [a["appointment_date"] for a in response.json()]
+    assert dates == ["2026-08-24", "2026-08-26"]
+
+
+@pytest.mark.anyio
+async def test_list_appointments_range_ordered_by_date_then_time(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
+            "appointment_date": "2026-08-25", "appointment_time": "15:00:00",
+        },
+        headers=headers,
+    )
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
+            "appointment_date": "2026-08-24", "appointment_time": "09:00:00",
+        },
+        headers=headers,
+    )
+
+    response = await client.get(
+        "/api/v1/appointments?start_date=2026-08-23&end_date=2026-08-29", headers=headers
+    )
+    ordering = [(a["appointment_date"], a["appointment_time"]) for a in response.json()]
+    assert ordering == [("2026-08-24", "09:00:00"), ("2026-08-25", "15:00:00")]

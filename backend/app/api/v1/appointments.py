@@ -90,15 +90,30 @@ async def create_appointment(
 
 
 @router.get("", response_model=list[AppointmentDetailOut])
-async def list_appointments(date: date_type, db: AsyncSession = Depends(get_db)):
+async def list_appointments(
+    date: date_type | None = None,
+    start_date: date_type | None = None,
+    end_date: date_type | None = None,
+    db: AsyncSession = Depends(get_db),
+):
     query = (
         select(Appointment, Client, Service, Barber)
         .join(Client, Appointment.client_id == Client.id)
         .join(Service, Appointment.service_id == Service.id)
         .join(Barber, Appointment.barber_id == Barber.id)
-        .where(Appointment.appointment_date == date)
-        .order_by(Appointment.appointment_time)
     )
+
+    if date is not None:
+        query = query.where(Appointment.appointment_date == date)
+    elif start_date is not None or end_date is not None:
+        if start_date is not None:
+            query = query.where(Appointment.appointment_date >= start_date)
+        if end_date is not None:
+            query = query.where(Appointment.appointment_date <= end_date)
+    else:
+        query = query.where(Appointment.appointment_date == date_type.today())
+
+    query = query.order_by(Appointment.appointment_date, Appointment.appointment_time)
     result = await db.execute(query)
     rows = result.all()
     return [
