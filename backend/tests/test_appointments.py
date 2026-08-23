@@ -421,3 +421,59 @@ async def test_list_appointments_range_ordered_by_date_then_time(client, db_sess
     )
     ordering = [(a["appointment_date"], a["appointment_time"]) for a in response.json()]
     assert ordering == [("2026-08-24", "09:00:00"), ("2026-08-25", "15:00:00")]
+
+
+@pytest.mark.anyio
+async def test_check_availability_returns_available_true_for_free_slot(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={
+            "barber_id": str(b.id),
+            "date": "2026-08-25",
+            "time": "10:00:00",
+            "service_id": str(s.id),
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": True, "conflict_with": None}
+
+
+@pytest.mark.anyio
+async def test_check_availability_returns_conflict_window_when_busy(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "10:00:00",
+        },
+        headers=headers,
+    )
+
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={
+            "barber_id": str(b.id),
+            "date": "2026-08-25",
+            "time": "10:10:00",
+            "service_id": str(s.id),
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": False, "conflict_with": "10:00 – 10:30"}
+
+
+@pytest.mark.anyio
+async def test_check_availability_requires_auth(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={"barber_id": str(b.id), "date": "2026-08-25", "time": "10:00:00", "service_id": str(s.id)},
+    )
+    assert response.status_code in (401, 403)

@@ -12,6 +12,7 @@ from app.integrations.n8n import notify_n8n
 from app.models import Appointment, Barber, Client, Service, User
 from app.models.appointment import ACTIVE_STATUSES
 from app.schemas.appointment import (
+    AppointmentCheckAvailabilityOut,
     AppointmentCreate,
     AppointmentDetailOut,
     AppointmentOut,
@@ -170,6 +171,34 @@ async def list_appointments(
         )
         for appt, client_row, service_row, barber_row in rows
     ]
+
+
+@router.get("/check-availability", response_model=AppointmentCheckAvailabilityOut)
+async def check_availability(
+    barber_id: uuid.UUID,
+    date: date_type,
+    time: str,
+    service_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    from datetime import time as time_type
+
+    hours, minutes = time.split(":")[:2]
+    appointment_time = time_type(int(hours), int(minutes))
+
+    service_row = await _get_service_or_404(service_id, db)
+    conflict = await _has_conflict(db, date, appointment_time, barber_id, service_row.duration_minutes)
+    if conflict is None:
+        return AppointmentCheckAvailabilityOut(available=True)
+
+    conflict_service = (await db.execute(select(Service).where(Service.id == conflict.service_id))).scalar_one()
+    start_minutes = conflict.appointment_time.hour * 60 + conflict.appointment_time.minute
+    end_minutes = start_minutes + conflict_service.duration_minutes
+    conflict_with = (
+        f"{start_minutes // 60:02d}:{start_minutes % 60:02d} – "
+        f"{(end_minutes // 60) % 24:02d}:{end_minutes % 60:02d}"
+    )
+    return AppointmentCheckAvailabilityOut(available=False, conflict_with=conflict_with)
 
 
 @router.put("/{appointment_id}", response_model=AppointmentOut)

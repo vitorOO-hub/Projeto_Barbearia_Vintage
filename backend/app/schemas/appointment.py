@@ -47,3 +47,8 @@ class AppointmentDetailOut(AppointmentOut):
     service_price: float
     service_duration_minutes: int
     barber_name: str
+
+
+class AppointmentCheckAvailabilityOut(BaseModel):
+    available: bool
+    conflict_with: str | None = None
