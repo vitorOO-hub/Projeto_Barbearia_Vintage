@@ -19,6 +19,9 @@ describe("AppointmentFormModal", () => {
       if (url === "/api/v1/clients") {
         return Promise.resolve({ data: [{ id: "c1", name: "João Silva", email: "joao@x.com" }] });
       }
+      if (url === "/api/v1/appointments/check-availability") {
+        return Promise.resolve({ data: { available: false, conflict_with: "10:00 – 10:45" } });
+      }
       return Promise.resolve({ data: [] });
     });
   });
@@ -57,6 +60,28 @@ describe("AppointmentFormModal", () => {
       barber_id: "b1",
       appointment_time: "14:00:00",
     });
+  });
+
+  it("shows a conflict message with the busy window once barber, service and time are all filled", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppointmentFormModal
+          date="2026-08-25"
+          initialValues={{
+            client_id: "c1",
+            client_name: "João Silva",
+            service_id: "s1",
+            barber_id: "b1",
+            appointment_time: "14:00:00",
+          }}
+          onSubmit={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText("Este barbeiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
   });
 
   it("shows client suggestions in the same field while typing and selects one on click", async () => {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { searchClients, fetchServices, type ClientOption, type ServiceOption } from "../api/appointments";
+import { searchClients, fetchServices, checkAvailability, type ClientOption, type ServiceOption } from "../api/appointments";
 import { fetchBarbers, type Barber } from "../api/barbers";
 import { formatCurrencyBR } from "../lib/format";
 
@@ -43,6 +43,13 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   const { data: barbers = [] } = useQuery<Barber[]>({ queryKey: ["barbers"], queryFn: fetchBarbers });
 
   const selectedService = services.find((s) => s.id === serviceId);
+
+  const availabilityEnabled = Boolean(barberId && serviceId && time);
+  const { data: availability } = useQuery({
+    queryKey: ["check-availability", barberId, serviceId, date, time],
+    queryFn: () => checkAvailability({ barberId, serviceId, date, time: `${time}:00` }),
+    enabled: availabilityEnabled,
+  });
 
   return (
     <div role="dialog" className="fixed inset-0 flex items-center justify-center bg-black/40">
@@ -122,6 +129,13 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
 
         <label className="mt-4 block text-sm font-medium text-gray-700">Horário</label>
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
+        {availabilityEnabled && availability && (
+          <p className={`mt-1 text-sm ${availability.available ? "text-green-700" : "text-red-700"}`}>
+            {availability.available
+              ? "Horário disponível"
+              : `Este barbeiro já tem atendimento das ${availability.conflict_with}`}
+          </p>
+        )}
 
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={onClose} className="rounded px-4 py-2 text-gray-700 hover:bg-gray-100">
