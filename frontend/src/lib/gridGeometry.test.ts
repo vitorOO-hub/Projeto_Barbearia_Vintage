@@ -56,4 +56,13 @@ describe("clusterOverlaps", () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].map((x) => x.id).sort()).toEqual(["a", "b"]);
   });
+
+  it("groups unsorted overlapping appointments correctly via transitive overlap", () => {
+    const a: FakeAppt = { id: "a", appointment_time: "00:00:00", service_duration_minutes: 10 };
+    const c: FakeAppt = { id: "c", appointment_time: "00:20:00", service_duration_minutes: 10 };
+    const b: FakeAppt = { id: "b", appointment_time: "00:08:00", service_duration_minutes: 17 };
+    const groups = clusterOverlaps([a, c, b]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].map((x) => x.id).sort()).toEqual(["a", "b", "c"]);
+  });
 });

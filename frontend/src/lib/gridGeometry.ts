@@ -38,10 +38,12 @@ function intervalsOverlap(aStart: number, aEnd: number, bStart: number, bEnd: nu
 }
 
 export function clusterOverlaps<T extends OverlappableAppointment>(appointments: T[]): T[][] {
+  const sorted = [...appointments].sort((a, b) => minutesSinceMidnight(a.appointment_time) - minutesSinceMidnight(b.appointment_time));
+
   const groups: T[][] = [];
   const groupRanges: { start: number; end: number }[] = [];
 
-  for (const appt of appointments) {
+  for (const appt of sorted) {
     const start = minutesSinceMidnight(appt.appointment_time);
     const end = start + appt.service_duration_minutes;
 
