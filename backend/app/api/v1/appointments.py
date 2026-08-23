@@ -72,6 +72,14 @@ async def _get_appointment_or_404(appointment_id: uuid.UUID, db: AsyncSession) -
     return appt
 
 
+async def _get_service_or_404(service_id: uuid.UUID, db: AsyncSession) -> Service:
+    result = await db.execute(select(Service).where(Service.id == service_id))
+    service = result.scalar_one_or_none()
+    if service is None:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado.")
+    return service
+
+
 @router.post("", response_model=AppointmentOut, status_code=status.HTTP_201_CREATED)
 async def create_appointment(
     data: AppointmentCreate,
@@ -79,7 +87,7 @@ async def create_appointment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    service_row = (await db.execute(select(Service).where(Service.id == data.service_id))).scalar_one()
+    service_row = await _get_service_or_404(data.service_id, db)
 
     conflict = await _has_conflict(
         db, data.appointment_date, data.appointment_time, data.barber_id, service_row.duration_minutes
@@ -179,7 +187,7 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
         appt.barber_id,
         appt.service_id,
     ):
-        new_service_row = (await db.execute(select(Service).where(Service.id == new_service_id))).scalar_one()
+        new_service_row = await _get_service_or_404(new_service_id, db)
         conflict = await _has_conflict(
             db, new_date, new_time, new_barber_id, new_service_row.duration_minutes, exclude_id=appt.id
         )

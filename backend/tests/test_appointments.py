@@ -1,3 +1,4 @@
+import uuid
 import pytest
 
 from app.core.security import hash_password
@@ -38,6 +39,25 @@ async def test_create_appointment(client, db_session):
     assert response.json()["status"] == "agendado"
     assert response.json()["barber_id"] == str(b.id)
     assert response.json()["confirmation_email_sent"] is False
+
+
+@pytest.mark.anyio
+async def test_create_appointment_with_invalid_service_id_returns_404(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    fake_service_id = str(uuid.uuid4())
+    response = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": fake_service_id,
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Serviço não encontrado."
 
 
 @pytest.mark.anyio
