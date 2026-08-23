@@ -125,6 +125,7 @@ async def list_appointments(
             appointment_date=appt.appointment_date,
             appointment_time=appt.appointment_time,
             status=appt.status,
+            confirmation_email_sent=appt.confirmation_email_sent,
             client_name=client_row.name,
             client_email=client_row.email,
             service_name=service_row.name,

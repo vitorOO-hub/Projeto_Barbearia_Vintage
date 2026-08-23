@@ -20,6 +20,7 @@ class AppointmentUpdate(BaseModel):
     barber_id: uuid.UUID | None = None
     appointment_date: date | None = None
     appointment_time: time | None = None
+    confirmation_email_sent: bool | None = None
 
 
 class AppointmentStatusUpdate(BaseModel):
@@ -36,6 +37,7 @@ class AppointmentOut(BaseModel):
     appointment_date: date
     appointment_time: time
     status: AppointmentStatus
+    confirmation_email_sent: bool
 
 
 class AppointmentDetailOut(AppointmentOut):

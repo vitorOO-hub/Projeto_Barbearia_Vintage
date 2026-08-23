@@ -37,6 +37,7 @@ async def test_create_appointment(client, db_session):
     assert response.status_code == 201
     assert response.json()["status"] == "agendado"
     assert response.json()["barber_id"] == str(b.id)
+    assert response.json()["confirmation_email_sent"] is False
 
 
 @pytest.mark.anyio
