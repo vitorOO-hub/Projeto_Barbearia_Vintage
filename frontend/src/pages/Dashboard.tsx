@@ -1,8 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchDashboardSummary } from "../api/dashboard";
+import { fetchDashboardRevenue, fetchDashboardSummary } from "../api/dashboard";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrencyBR } from "../lib/format";
 
 export function Dashboard() {
+  const { user } = useAuth();
   const { data, isLoading } = useQuery({ queryKey: ["dashboard-summary"], queryFn: fetchDashboardSummary });
+  const { data: revenue } = useQuery({
+    queryKey: ["dashboard-revenue"],
+    queryFn: fetchDashboardRevenue,
+    enabled: Boolean(user?.is_admin),
+  });
 
   if (isLoading || !data) {
     return <div className="loading-state">Carregando...</div>;
@@ -33,6 +41,25 @@ export function Dashboard() {
         ))}
         {data.top_services.length === 0 && <p className="py-3 text-ink-soft">Sem dados ainda.</p>}
       </ul>
+
+      {user?.is_admin && revenue && (
+        <>
+          <h2 className="section-title">Faturamento da semana</h2>
+          <div className="card mt-2">
+            <p className="text-sm text-ink-soft">Total (atendimentos concluídos)</p>
+            <p className="font-display text-3xl font-semibold text-ink">{formatCurrencyBR(revenue.total_this_week)}</p>
+          </div>
+          <ul className="card mt-2 py-0">
+            {revenue.by_barber.map((b) => (
+              <li key={b.barber_name} className="list-row">
+                <span className="text-ink">{b.barber_name}</span>
+                <span className="font-medium text-ink-soft">{formatCurrencyBR(b.total)}</span>
+              </li>
+            ))}
+            {revenue.by_barber.length === 0 && <p className="py-3 text-ink-soft">Sem dados ainda.</p>}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

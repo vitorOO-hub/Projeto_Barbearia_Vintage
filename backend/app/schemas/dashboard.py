@@ -10,3 +10,13 @@ class DashboardSummary(BaseModel):
     appointments_today: int
     appointments_this_week: int
     top_services: list[ServiceCount]
+
+
+class BarberRevenue(BaseModel):
+    barber_name: str
+    total: float
+
+
+class DashboardRevenue(BaseModel):
+    total_this_week: float
+    by_barber: list[BarberRevenue]
