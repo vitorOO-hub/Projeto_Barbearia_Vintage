@@ -42,17 +42,15 @@ function baseProps() {
 
 describe("WeekView", () => {
   beforeEach(() => {
-    // Store the original scrollIntoView if it exists
     originalScrollIntoView = Element.prototype.scrollIntoView;
-    // Mock scrollIntoView for all tests
     Element.prototype.scrollIntoView = vi.fn();
   });
 
   afterEach(() => {
-    // Restore the original scrollIntoView
     if (originalScrollIntoView) {
       Element.prototype.scrollIntoView = originalScrollIntoView;
     }
+    vi.useRealTimers();
   });
 
   it("shows a loading skeleton instead of a blank screen while loading", () => {
@@ -65,14 +63,37 @@ describe("WeekView", () => {
     expect(screen.getByText("Nenhum agendamento neste período.")).toBeInTheDocument();
   });
 
-  it("stacks appointments from two different barbers in the same day and time slot", () => {
-    const appointments = [
-      makeAppointment({ id: "a1", barber_id: "b1", barber_name: "Carlos Silva", client_name: "João Silva" }),
-      makeAppointment({ id: "a2", barber_id: "b2", barber_name: "Marcos Souza", client_name: "Maria Costa" }),
-    ];
-    render(<WeekView {...baseProps()} appointments={appointments} />);
-    expect(screen.getByText("João Silva")).toBeInTheDocument();
-    expect(screen.getByText("Maria Costa")).toBeInTheDocument();
+  it("positions a block's top and height proportionally to its start time and duration", () => {
+    const appointment = makeAppointment({ appointment_time: "09:00:00", service_duration_minutes: 45 });
+    render(<WeekView {...baseProps()} appointments={[appointment]} />);
+
+    const block = screen.getByTestId(`appointment-block-${appointment.id}`);
+    expect(block.style.top).toBe("120px");
+    expect(block.style.height).toBe("90px");
+  });
+
+  it("shows full details for a tall block and only the client name for a tiny sliver", () => {
+    const tall = makeAppointment({ id: "tall", service_duration_minutes: 45 });
+    const tiny = makeAppointment({ id: "tiny", appointment_date: "2026-08-26", service_duration_minutes: 5 });
+    render(<WeekView {...baseProps()} appointments={[tall, tiny]} />);
+
+    const tallBlock = screen.getByTestId("appointment-block-tall");
+    expect(tallBlock).toHaveTextContent("João Silva");
+    expect(tallBlock).toHaveTextContent("Corte");
+    expect(tallBlock).toHaveTextContent("Carlos Silva");
+
+    const tinyBlock = screen.getByTestId("appointment-block-tiny");
+    expect(tinyBlock.textContent).toBe("");
+    expect(tinyBlock).toHaveAttribute("title", expect.stringContaining("João Silva"));
+  });
+
+  it("splits overlapping appointments from different barbers into side-by-side sub-columns", () => {
+    const a = makeAppointment({ id: "a1", barber_id: "b1", client_name: "João Silva", appointment_time: "09:00:00", service_duration_minutes: 40 });
+    const b = makeAppointment({ id: "a2", barber_id: "b2", client_name: "Maria Costa", appointment_time: "09:20:00", service_duration_minutes: 40 });
+    render(<WeekView {...baseProps()} appointments={[a, b]} />);
+
+    expect(screen.getByTestId("appointment-block-a1").style.width).toBe("50%");
+    expect(screen.getByTestId("appointment-block-a2").style.width).toBe("50%");
   });
 
   it("calls onSelectAppointment when an appointment block is clicked", async () => {
@@ -80,7 +101,7 @@ describe("WeekView", () => {
     const appointment = makeAppointment({});
     render(<WeekView {...baseProps()} appointments={[appointment]} onSelectAppointment={onSelectAppointment} />);
 
-    await userEvent.click(screen.getByText("João Silva"));
+    await userEvent.click(screen.getByTestId(`appointment-block-${appointment.id}`));
     expect(onSelectAppointment).toHaveBeenCalledWith(appointment);
   });
 
@@ -97,13 +118,26 @@ describe("WeekView", () => {
 
   it("highlights the column for today", () => {
     render(<WeekView {...baseProps()} />);
-    expect(screen.getByText("Ter 25")).toHaveClass("bg-gray-900");
+    expect(screen.getByText("Ter 25/08")).toHaveClass("bg-gray-900");
   });
 
   it("scrolls the today column into view when the week is displayed", () => {
     render(<WeekView {...baseProps()} />);
-
     const mockScrollIntoView = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
     expect(mockScrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ inline: "start" }));
+  });
+
+  it("shows the now-line only in today's column when the current time is within the grid range", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 25, 10, 0, 0));
+    render(<WeekView {...baseProps()} />);
+    expect(screen.getAllByTestId("now-line")).toHaveLength(1);
+  });
+
+  it("does not show the now-line when the current time is outside the grid range", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 25, 22, 0, 0));
+    render(<WeekView {...baseProps()} />);
+    expect(screen.queryByTestId("now-line")).not.toBeInTheDocument();
   });
 });
