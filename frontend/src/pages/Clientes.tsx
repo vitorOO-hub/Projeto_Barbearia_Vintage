@@ -59,7 +59,7 @@ export function Clientes() {
       <h1 className="page-title">Clientes</h1>
 
       <div className="card mt-4 flex flex-wrap items-end gap-2">
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="client-name-new" className="field-label">
             Nome
           </label>
@@ -71,7 +71,7 @@ export function Clientes() {
             className="field-input"
           />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="client-email-new" className="field-label">
             E-mail
           </label>
@@ -85,7 +85,7 @@ export function Clientes() {
             className="field-input"
           />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="client-phone-new" className="field-label">
             Telefone
           </label>
@@ -100,7 +100,7 @@ export function Clientes() {
         <button
           onClick={() => createMutation.mutate()}
           disabled={!name || !email || emailInvalid}
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto"
         >
           Salvar cliente
         </button>
@@ -117,12 +117,12 @@ export function Clientes() {
       <ul className="mt-4">
         {clients.map((c) => (
           <li key={c.id} className="list-row">
-            <div>
+            <div className="min-w-0">
               <p className="font-medium text-ink">{c.name}</p>
-              {c.email && <p className="text-sm text-ink-soft">{c.email}</p>}
+              {c.email && <p className="text-sm text-ink-soft break-words">{c.email}</p>}
               {c.phone && <p className="text-sm text-ink-soft">{c.phone}</p>}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setEditTarget(c)} className="link-action" aria-label="Editar cliente">
                 Editar cliente
               </button>

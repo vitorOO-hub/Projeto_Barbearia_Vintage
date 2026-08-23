@@ -42,7 +42,7 @@ function Layout() {
             {item.label}
           </Link>
         ))}
-        <button onClick={handleLogout} className="nav-link ml-auto" aria-label="Sair">
+        <button onClick={handleLogout} className="nav-link sm:ml-auto" aria-label="Sair">
           Sair
         </button>
       </nav>

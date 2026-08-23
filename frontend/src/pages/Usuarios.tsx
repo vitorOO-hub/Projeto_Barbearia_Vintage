@@ -59,13 +59,13 @@ export function Usuarios() {
       <h1 className="page-title">Usuários</h1>
 
       <div className="card mt-4 flex flex-wrap items-end gap-2">
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="user-name-new" className="field-label">
             Nome
           </label>
           <input id="user-name-new" value={name} onChange={(e) => setName(e.target.value)} className="field-input" />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="user-email-new" className="field-label">
             E-mail
           </label>
@@ -77,7 +77,7 @@ export function Usuarios() {
             className="field-input"
           />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="user-password-new" className="field-label">
             Senha
           </label>
@@ -96,7 +96,7 @@ export function Usuarios() {
         <button
           onClick={() => createMutation.mutate()}
           disabled={!name || !email || !password}
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto"
         >
           Salvar usuário
         </button>
@@ -105,13 +105,13 @@ export function Usuarios() {
       <ul className="mt-4">
         {users.map((u) => (
           <li key={u.id} className="list-row">
-            <div>
+            <div className="min-w-0">
               <p className="font-medium text-ink">{u.name}</p>
-              <p className="text-sm text-ink-soft">
+              <p className="text-sm text-ink-soft break-words">
                 {u.email} {u.is_admin && "· Administrador"}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setEditTarget(u)} className="link-action" aria-label="Editar usuário">
                 Editar usuário
               </button>

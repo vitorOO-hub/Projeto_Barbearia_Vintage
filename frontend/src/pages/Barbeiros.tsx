@@ -58,7 +58,7 @@ export function Barbeiros() {
       <h1 className="page-title">Barbeiros</h1>
 
       <div className="card mt-4 flex flex-wrap items-end gap-2">
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="barber-name-new" className="field-label">
             Nome
           </label>
@@ -70,7 +70,7 @@ export function Barbeiros() {
             className="field-input"
           />
         </div>
-        <button onClick={() => createMutation.mutate()} disabled={!name} className="btn-primary">
+        <button onClick={() => createMutation.mutate()} disabled={!name} className="btn-primary w-full sm:w-auto">
           Salvar barbeiro
         </button>
       </div>
@@ -79,12 +79,12 @@ export function Barbeiros() {
         {barbers.map((b) => (
           <li key={b.id} className="list-row">
             {editTarget?.id === b.id ? (
-              <>
+              <div className="flex w-full flex-wrap items-center gap-3">
                 <input
                   aria-label="Editar nome do barbeiro"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="field-input mt-0"
+                  className="field-input mt-0 min-w-[160px] flex-1"
                 />
                 <div className="flex items-center gap-3">
                   <button onClick={() => setEditTarget(null)} className="btn-ghost">
@@ -98,11 +98,11 @@ export function Barbeiros() {
                     Salvar
                   </button>
                 </div>
-              </>
+              </div>
             ) : (
               <>
-                <p className="font-medium text-ink">{b.name}</p>
-                <div className="flex items-center gap-3">
+                <p className="min-w-0 font-medium text-ink">{b.name}</p>
+                <div className="flex flex-wrap items-center gap-3">
                   <button onClick={() => startEdit(b)} className="link-action" aria-label="Editar barbeiro">
                     Editar barbeiro
                   </button>

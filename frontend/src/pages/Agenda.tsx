@@ -158,14 +158,14 @@ export function Agenda() {
           <ul className="mt-6">
             {appointments.map((appt) => (
               <li key={appt.id} className="list-row">
-                <div>
+                <div className="min-w-0">
                   <p className="font-medium text-ink">{appt.client_name}</p>
                   <p className="text-sm text-ink-soft">
                     <span>{formatTimeBR(appt.appointment_time)}</span> · <span>{appt.service_name}</span> ·{" "}
                     <span>{appt.barber_name}</span> · <span>{formatCurrencyBR(appt.service_price)}</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <StatusBadge status={appt.status} />
                   <label className="sr-only" htmlFor={`status-${appt.id}`}>
                     Status do agendamento
