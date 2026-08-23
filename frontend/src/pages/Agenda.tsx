@@ -19,7 +19,7 @@ import { useToast } from "../context/ToastContext";
 import { getWeekDays, getWeekStart, shiftWeek, toISODate } from "../lib/week";
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toISODate(new Date());
 }
 
 const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [

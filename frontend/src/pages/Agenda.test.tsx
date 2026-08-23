@@ -111,13 +111,32 @@ describe("Agenda page", () => {
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
   });
 
-  it("switches to the Semana view and renders the appointment there", async () => {
-    renderAgenda();
-    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
+  describe("Semana view", () => {
+    it("switches to the Semana view and renders the appointment there", async () => {
+      // Pin "today" to 2026-08-22 (Saturday), the same week as the mocked appointment's
+      // date, so this test doesn't depend on when it happens to be run. Fake timers are
+      // only active for the render, since userEvent's internal delays rely on real timers.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 7, 22));
+      renderAgenda();
+      vi.useRealTimers();
 
-    await userEvent.click(screen.getByRole("button", { name: "Semana" }));
+      await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
 
-    await waitFor(() => expect(screen.getAllByText("João Silva").length).toBeGreaterThan(0));
-    expect(screen.queryByText("Nenhum agendamento para este dia.")).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Semana" }));
+
+      await waitFor(() => expect(screen.getAllByText("João Silva").length).toBeGreaterThan(0));
+      expect(screen.queryByText("Nenhum agendamento para este dia.")).not.toBeInTheDocument();
+
+      expect(apiClient.get).toHaveBeenCalledWith(
+        "/api/v1/appointments",
+        expect.objectContaining({
+          params: expect.objectContaining({
+            start_date: "2026-08-16",
+            end_date: "2026-08-22",
+          }),
+        })
+      );
+    });
   });
 });
