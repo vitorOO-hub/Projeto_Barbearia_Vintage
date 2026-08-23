@@ -11,11 +11,15 @@ interface ClientFormModalProps {
   onClose: () => void;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_ERROR = "O e-mail deve ser do tipo email@gmail.com";
+
 export function ClientFormModal({ initialValues, onSubmit, onClose }: ClientFormModalProps) {
   const [name, setName] = useState(initialValues.name);
   const [email, setEmail] = useState(initialValues.email ?? "");
   const [phone, setPhone] = useState(initialValues.phone ?? "");
   const [notes, setNotes] = useState(initialValues.notes ?? "");
+  const emailInvalid = email.length > 0 && !EMAIL_REGEX.test(email);
 
   return (
     <div role="dialog" className="modal-backdrop">
@@ -30,7 +34,15 @@ export function ClientFormModal({ initialValues, onSubmit, onClose }: ClientForm
         <label htmlFor="client-email" className="field-label mt-4">
           E-mail
         </label>
-        <input id="client-email" value={email} onChange={(e) => setEmail(e.target.value)} required className="field-input" />
+        <input
+          id="client-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="field-input"
+        />
+        {emailInvalid && <p className="field-error">{EMAIL_ERROR}</p>}
 
         <label htmlFor="client-phone" className="field-label mt-4">
           Telefone
@@ -54,7 +66,7 @@ export function ClientFormModal({ initialValues, onSubmit, onClose }: ClientForm
           </button>
           <button
             onClick={() => onSubmit({ name, email, phone: phone || undefined, notes: notes || undefined })}
-            disabled={!name || !email}
+            disabled={!name || !email || emailInvalid}
             className="btn-primary"
           >
             Salvar cliente

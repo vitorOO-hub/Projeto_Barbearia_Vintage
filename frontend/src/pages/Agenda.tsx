@@ -62,8 +62,13 @@ export function Agenda() {
   }
 
   const createMutation = useMutation({
-    mutationFn: (payload: { client_id: string; service_id: string; barber_id: string; appointment_time: string }) =>
-      createAppointment({ ...payload, appointment_date: date }),
+    mutationFn: (payload: {
+      client_id: string;
+      service_id: string;
+      barber_id: string;
+      appointment_date: string;
+      appointment_time: string;
+    }) => createAppointment(payload),
     onSuccess: () => {
       invalidate();
       toast.success("Agendamento criado e cliente notificado por e-mail.");
@@ -78,12 +83,14 @@ export function Agenda() {
       client_id: string;
       service_id: string;
       barber_id: string;
+      appointment_date: string;
       appointment_time: string;
     }) =>
       updateAppointment(payload.id, {
         client_id: payload.client_id,
         service_id: payload.service_id,
         barber_id: payload.barber_id,
+        appointment_date: payload.appointment_date,
         appointment_time: payload.appointment_time,
       }),
     onSuccess: () => {

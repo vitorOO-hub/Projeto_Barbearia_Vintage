@@ -6,11 +6,15 @@ import { ClientFormModal } from "../components/ClientFormModal";
 import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_ERROR = "O e-mail deve ser do tipo email@gmail.com";
+
 export function Clientes() {
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const emailInvalid = email.length > 0 && !EMAIL_REGEX.test(email);
   const [removeTarget, setRemoveTarget] = useState<Client | null>(null);
   const [editTarget, setEditTarget] = useState<Client | null>(null);
   const queryClient = useQueryClient();
@@ -74,12 +78,14 @@ export function Clientes() {
           </label>
           <input
             id="client-email-new"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="E-mail"
             required
             className="field-input"
           />
+          {emailInvalid && <p className="field-error">{EMAIL_ERROR}</p>}
         </div>
         <div>
           <label htmlFor="client-phone-new" className="field-label">
@@ -93,7 +99,11 @@ export function Clientes() {
             className="field-input"
           />
         </div>
-        <button onClick={() => createMutation.mutate()} disabled={!name || !email} className="btn-primary">
+        <button
+          onClick={() => createMutation.mutate()}
+          disabled={!name || !email || emailInvalid}
+          className="btn-primary"
+        >
           Salvar cliente
         </button>
       </div>

@@ -13,7 +13,13 @@ interface AppointmentFormModalProps {
     barber_id: string;
     appointment_time: string;
   };
-  onSubmit: (data: { client_id: string; service_id: string; barber_id: string; appointment_time: string }) => void;
+  onSubmit: (data: {
+    client_id: string;
+    service_id: string;
+    barber_id: string;
+    appointment_date: string;
+    appointment_time: string;
+  }) => void;
   onClose: () => void;
 }
 
@@ -23,6 +29,7 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   const [clientId, setClientId] = useState(initialValues?.client_id ?? "");
   const [serviceId, setServiceId] = useState(initialValues?.service_id ?? "");
   const [barberId, setBarberId] = useState(initialValues?.barber_id ?? "");
+  const [appointmentDate, setAppointmentDate] = useState(date);
   const [time, setTime] = useState(initialValues?.appointment_time.slice(0, 5) ?? "");
   const [isClientFieldFocused, setIsClientFieldFocused] = useState(false);
 
@@ -47,9 +54,18 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   return (
     <div role="dialog" className="modal-backdrop">
       <div className="modal-panel">
-        <h2 className="modal-title">
-          {isEdit ? "Editar agendamento" : "Novo agendamento"} — {date}
-        </h2>
+        <h2 className="modal-title">{isEdit ? "Editar agendamento" : "Novo agendamento"}</h2>
+
+        <label htmlFor="appointment-date" className="field-label mt-4">
+          Dia
+        </label>
+        <input
+          id="appointment-date"
+          type="date"
+          value={appointmentDate}
+          onChange={(e) => setAppointmentDate(e.target.value)}
+          className="field-input"
+        />
 
         <label htmlFor="client" className="field-label mt-4">
           Cliente
@@ -126,9 +142,15 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
           </button>
           <button
             onClick={() =>
-              onSubmit({ client_id: clientId, service_id: serviceId, barber_id: barberId, appointment_time: `${time}:00` })
+              onSubmit({
+                client_id: clientId,
+                service_id: serviceId,
+                barber_id: barberId,
+                appointment_date: appointmentDate,
+                appointment_time: `${time}:00`,
+              })
             }
-            disabled={!clientId || !serviceId || !barberId || !time}
+            disabled={!clientId || !serviceId || !barberId || !appointmentDate || !time}
             className="btn-primary"
           >
             Salvar agendamento
