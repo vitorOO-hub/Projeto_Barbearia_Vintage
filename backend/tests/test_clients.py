@@ -25,15 +25,34 @@ async def test_create_client(client, db_session):
 
 @pytest.mark.anyio
 async def test_create_client_requires_auth(client):
-    response = await client.post("/api/v1/clients", json={"name": "João"})
+    response = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"})
     assert response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_create_client_without_email_fails_validation(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    response = await client.post("/api/v1/clients", json={"name": "João"}, headers=headers)
+    assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_create_client_with_phone(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    response = await client.post(
+        "/api/v1/clients",
+        json={"name": "João Silva", "email": "joao@x.com", "phone": "(11) 957645612"},
+        headers=headers,
+    )
+    assert response.status_code == 201
+    assert response.json()["phone"] == "(11) 957645612"
 
 
 @pytest.mark.anyio
 async def test_list_clients_excludes_inactive_by_default(client, db_session):
     headers = await _auth_headers(client, db_session)
-    await client.post("/api/v1/clients", json={"name": "Ativo"}, headers=headers)
-    resp2 = await client.post("/api/v1/clients", json={"name": "Sera Removido"}, headers=headers)
+    await client.post("/api/v1/clients", json={"name": "Ativo", "email": "ativo@x.com"}, headers=headers)
+    resp2 = await client.post("/api/v1/clients", json={"name": "Sera Removido", "email": "removido@x.com"}, headers=headers)
     inactive_id = resp2.json()["id"]
     await client.delete(f"/api/v1/clients/{inactive_id}", headers=headers)
 
@@ -46,7 +65,7 @@ async def test_list_clients_excludes_inactive_by_default(client, db_session):
 @pytest.mark.anyio
 async def test_list_clients_include_inactive(client, db_session):
     headers = await _auth_headers(client, db_session)
-    resp = await client.post("/api/v1/clients", json={"name": "Sera Removido"}, headers=headers)
+    resp = await client.post("/api/v1/clients", json={"name": "Sera Removido", "email": "removido@x.com"}, headers=headers)
     inactive_id = resp.json()["id"]
     await client.delete(f"/api/v1/clients/{inactive_id}", headers=headers)
 
@@ -58,8 +77,8 @@ async def test_list_clients_include_inactive(client, db_session):
 @pytest.mark.anyio
 async def test_search_clients_by_name(client, db_session):
     headers = await _auth_headers(client, db_session)
-    await client.post("/api/v1/clients", json={"name": "João Silva"}, headers=headers)
-    await client.post("/api/v1/clients", json={"name": "Maria Souza"}, headers=headers)
+    await client.post("/api/v1/clients", json={"name": "João Silva", "email": "joao@x.com"}, headers=headers)
+    await client.post("/api/v1/clients", json={"name": "Maria Souza", "email": "maria@x.com"}, headers=headers)
 
     response = await client.get("/api/v1/clients?search=jo", headers=headers)
     names = [c["name"] for c in response.json()]
@@ -69,7 +88,7 @@ async def test_search_clients_by_name(client, db_session):
 @pytest.mark.anyio
 async def test_update_client(client, db_session):
     headers = await _auth_headers(client, db_session)
-    resp = await client.post("/api/v1/clients", json={"name": "João"}, headers=headers)
+    resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
     client_id = resp.json()["id"]
 
     response = await client.put(f"/api/v1/clients/{client_id}", json={"notes": "Prefere corte curto"}, headers=headers)
@@ -78,9 +97,22 @@ async def test_update_client(client, db_session):
 
 
 @pytest.mark.anyio
+async def test_update_client_phone(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
+    client_id = resp.json()["id"]
+
+    response = await client.put(
+        f"/api/v1/clients/{client_id}", json={"phone": "(11) 957645612"}, headers=headers
+    )
+    assert response.status_code == 200
+    assert response.json()["phone"] == "(11) 957645612"
+
+
+@pytest.mark.anyio
 async def test_delete_client_is_soft_delete(client, db_session):
     headers = await _auth_headers(client, db_session)
-    resp = await client.post("/api/v1/clients", json={"name": "João"}, headers=headers)
+    resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
     client_id = resp.json()["id"]
 
     response = await client.delete(f"/api/v1/clients/{client_id}", headers=headers)

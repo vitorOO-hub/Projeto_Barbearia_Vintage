@@ -10,6 +10,7 @@ export function Clientes() {
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [removeTarget, setRemoveTarget] = useState<Client | null>(null);
   const [editTarget, setEditTarget] = useState<Client | null>(null);
   const queryClient = useQueryClient();
@@ -18,12 +19,13 @@ export function Clientes() {
   const { data: clients = [] } = useQuery({ queryKey: ["clients-page", search], queryFn: () => fetchClients(search) });
 
   const createMutation = useMutation({
-    mutationFn: () => createClient({ name, email: email || undefined }),
+    mutationFn: () => createClient({ name, email, phone: phone || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente cadastrado com sucesso.");
       setName("");
       setEmail("");
+      setPhone("");
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -39,8 +41,8 @@ export function Clientes() {
   });
 
   const editMutation = useMutation({
-    mutationFn: (payload: { id: string; name: string; email?: string; notes?: string }) =>
-      updateClient(payload.id, { name: payload.name, email: payload.email, notes: payload.notes }),
+    mutationFn: (payload: { id: string; name: string; email: string; phone?: string; notes?: string }) =>
+      updateClient(payload.id, { name: payload.name, email: payload.email, phone: payload.phone, notes: payload.notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente atualizado.");
@@ -55,10 +57,22 @@ export function Clientes() {
 
       <div className="mt-4 flex gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" className="rounded border px-3 py-2" />
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail (opcional)" className="rounded border px-3 py-2" />
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="E-mail"
+          required
+          className="rounded border px-3 py-2"
+        />
+        <input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="(11) 957645612"
+          className="rounded border px-3 py-2"
+        />
         <button
           onClick={() => createMutation.mutate()}
-          disabled={!name}
+          disabled={!name || !email}
           className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
         >
           Salvar cliente
@@ -78,6 +92,7 @@ export function Clientes() {
             <div>
               <p className="font-medium">{c.name}</p>
               {c.email && <p className="text-sm text-gray-500">{c.email}</p>}
+              {c.phone && <p className="text-sm text-gray-500">{c.phone}</p>}
             </div>
             <div className="flex items-center gap-3">
               <button onClick={() => setEditTarget(c)} className="text-sm text-gray-700 hover:underline" aria-label="Editar cliente">
@@ -93,7 +108,7 @@ export function Clientes() {
 
       {editTarget && (
         <ClientFormModal
-          initialValues={{ name: editTarget.name, email: editTarget.email, notes: editTarget.notes }}
+          initialValues={{ name: editTarget.name, email: editTarget.email, phone: editTarget.phone, notes: editTarget.notes }}
           onClose={() => setEditTarget(null)}
           onSubmit={(data) => editMutation.mutate({ id: editTarget.id, ...data })}
         />
