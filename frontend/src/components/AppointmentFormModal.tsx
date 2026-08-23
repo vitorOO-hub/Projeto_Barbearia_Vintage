@@ -7,6 +7,7 @@ import { formatCurrencyBR } from "../lib/format";
 interface AppointmentFormModalProps {
   date: string;
   initialValues?: {
+    id?: string;
     client_id: string;
     client_name: string;
     service_id: string;
@@ -47,7 +48,7 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   const availabilityEnabled = Boolean(barberId && serviceId && time);
   const { data: availability } = useQuery({
     queryKey: ["check-availability", barberId, serviceId, date, time],
-    queryFn: () => checkAvailability({ barberId, serviceId, date, time: `${time}:00` }),
+    queryFn: () => checkAvailability({ barberId, serviceId, date, time: `${time}:00`, appointmentId: initialValues?.id }),
     enabled: availabilityEnabled,
   });
 

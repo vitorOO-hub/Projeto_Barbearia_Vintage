@@ -477,3 +477,45 @@ async def test_check_availability_requires_auth(client, db_session):
         params={"barber_id": str(b.id), "date": "2026-08-25", "time": "10:00:00", "service_id": str(s.id)},
     )
     assert response.status_code in (401, 403)
+
+
+@pytest.mark.anyio
+async def test_check_availability_excludes_own_appointment_id(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    resp = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "10:00:00",
+        },
+        headers=headers,
+    )
+    appt_id = resp.json()["id"]
+
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={
+            "barber_id": str(b.id),
+            "date": "2026-08-25",
+            "time": "10:00:00",
+            "service_id": str(s.id),
+            "appointment_id": appt_id,
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json() == {"available": True, "conflict_with": None}
+
+
+@pytest.mark.anyio
+async def test_check_availability_with_malformed_time_returns_422(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={"barber_id": str(b.id), "date": "2026-08-25", "time": "not-a-time", "service_id": str(s.id)},
+        headers=headers,
+    )
+    assert response.status_code == 422

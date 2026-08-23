@@ -220,6 +220,7 @@ export function Agenda() {
         <AppointmentFormModal
           date={editTarget.appointment_date}
           initialValues={{
+            id: editTarget.id,
             client_id: editTarget.client_id,
             client_name: editTarget.client_name,
             service_id: editTarget.service_id,

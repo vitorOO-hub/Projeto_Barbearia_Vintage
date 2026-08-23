@@ -177,17 +177,15 @@ async def list_appointments(
 async def check_availability(
     barber_id: uuid.UUID,
     date: date_type,
-    time: str,
+    time: time,
     service_id: uuid.UUID,
+    appointment_id: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    from datetime import time as time_type
-
-    hours, minutes = time.split(":")[:2]
-    appointment_time = time_type(int(hours), int(minutes))
-
     service_row = await _get_service_or_404(service_id, db)
-    conflict = await _has_conflict(db, date, appointment_time, barber_id, service_row.duration_minutes)
+    conflict = await _has_conflict(
+        db, date, time, barber_id, service_row.duration_minutes, exclude_id=appointment_id
+    )
     if conflict is None:
         return AppointmentCheckAvailabilityOut(available=True)
 

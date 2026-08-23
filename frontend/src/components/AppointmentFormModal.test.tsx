@@ -84,6 +84,39 @@ describe("AppointmentFormModal", () => {
     expect(await screen.findByText("Este barbeiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
   });
 
+  it("excludes its own id from the availability check when editing an existing appointment", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppointmentFormModal
+          date="2026-08-25"
+          initialValues={{
+            id: "appt-1",
+            client_id: "c1",
+            client_name: "João Silva",
+            service_id: "s1",
+            barber_id: "b1",
+            appointment_time: "14:00:00",
+          }}
+          onSubmit={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() =>
+      expect(apiClient.get).toHaveBeenCalledWith("/api/v1/appointments/check-availability", {
+        params: {
+          barber_id: "b1",
+          date: "2026-08-25",
+          time: "14:00:00",
+          service_id: "s1",
+          appointment_id: "appt-1",
+        },
+      })
+    );
+  });
+
   it("shows client suggestions in the same field while typing and selects one on click", async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(

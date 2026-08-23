@@ -39,9 +39,16 @@ export async function checkAvailability(params: {
   date: string;
   time: string;
   serviceId: string;
+  appointmentId?: string;
 }): Promise<AvailabilityResult> {
   const { data } = await apiClient.get<AvailabilityResult>("/api/v1/appointments/check-availability", {
-    params: { barber_id: params.barberId, date: params.date, time: params.time, service_id: params.serviceId },
+    params: {
+      barber_id: params.barberId,
+      date: params.date,
+      time: params.time,
+      service_id: params.serviceId,
+      appointment_id: params.appointmentId,
+    },
   });
   return data;
 }
