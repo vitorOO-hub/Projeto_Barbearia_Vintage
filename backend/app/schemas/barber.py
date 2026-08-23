@@ -8,3 +8,11 @@ class BarberOut(BaseModel):
 
     id: uuid.UUID
     name: str
+
+
+class BarberCreate(BaseModel):
+    name: str
+
+
+class BarberUpdate(BaseModel):
+    name: str | None = None

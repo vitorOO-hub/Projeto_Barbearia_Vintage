@@ -1,5 +1,6 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -22,6 +23,9 @@ async def db_session():
         "sqlite+aiosqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
+    )
+    event.listens_for(engine.sync_engine, "connect")(
+        lambda dbapi_conn, _: dbapi_conn.execute("PRAGMA foreign_keys=ON")
     )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
