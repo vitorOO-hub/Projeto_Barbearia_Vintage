@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createClient, deactivateClient, fetchClients, type Client } from "../api/clients";
+import { createClient, deactivateClient, fetchClients, updateClient, type Client } from "../api/clients";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { ClientFormModal } from "../components/ClientFormModal";
 import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
 
@@ -10,6 +11,7 @@ export function Clientes() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [removeTarget, setRemoveTarget] = useState<Client | null>(null);
+  const [editTarget, setEditTarget] = useState<Client | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -32,6 +34,17 @@ export function Clientes() {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente removido.");
       setRemoveTarget(null);
+    },
+    onError: (error) => toast.error(translateApiError(error)),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (payload: { id: string; name: string; email?: string; notes?: string }) =>
+      updateClient(payload.id, { name: payload.name, email: payload.email, notes: payload.notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients-page"] });
+      toast.success("Cliente atualizado.");
+      setEditTarget(null);
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -66,12 +79,25 @@ export function Clientes() {
               <p className="font-medium">{c.name}</p>
               {c.email && <p className="text-sm text-gray-500">{c.email}</p>}
             </div>
-            <button onClick={() => setRemoveTarget(c)} className="text-sm text-red-600 hover:underline" aria-label="Remover cliente">
-              Remover cliente
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setEditTarget(c)} className="text-sm text-gray-700 hover:underline" aria-label="Editar cliente">
+                Editar cliente
+              </button>
+              <button onClick={() => setRemoveTarget(c)} className="text-sm text-red-600 hover:underline" aria-label="Remover cliente">
+                Remover cliente
+              </button>
+            </div>
           </li>
         ))}
       </ul>
+
+      {editTarget && (
+        <ClientFormModal
+          initialValues={{ name: editTarget.name, email: editTarget.email, notes: editTarget.notes }}
+          onClose={() => setEditTarget(null)}
+          onSubmit={(data) => editMutation.mutate({ id: editTarget.id, ...data })}
+        />
+      )}
 
       <ConfirmModal
         open={removeTarget !== null}

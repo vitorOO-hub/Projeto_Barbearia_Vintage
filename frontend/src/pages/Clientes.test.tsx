@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../context/ToastContext";
@@ -45,5 +45,29 @@ describe("Clientes page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
 
     await waitFor(() => expect(apiClient.delete).toHaveBeenCalledWith("/api/v1/clients/c1"));
+  });
+
+  it("opens the edit modal pre-filled with the client's data and saves the changes", async () => {
+    renderClientes();
+    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar cliente" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByLabelText("Nome")).toHaveValue("João Silva");
+
+    await userEvent.clear(within(dialog).getByLabelText("Nome"));
+    await userEvent.type(within(dialog).getByLabelText("Nome"), "João S. Silva");
+
+    vi.mocked(apiClient.put).mockResolvedValue({
+      data: { id: "c1", name: "João S. Silva", email: "joao@x.com", notes: null, active: true },
+    });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Salvar cliente" }));
+
+    await waitFor(() =>
+      expect(apiClient.put).toHaveBeenCalledWith("/api/v1/clients/c1", {
+        name: "João S. Silva",
+        email: "joao@x.com",
+      })
+    );
   });
 });
