@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel
 
 
@@ -20,3 +22,16 @@ class BarberRevenue(BaseModel):
 class DashboardRevenue(BaseModel):
     total_this_week: float
     by_barber: list[BarberRevenue]
+
+
+class WeekRevenue(BaseModel):
+    week_start: date
+    week_end: date
+    total: float
+    appointments_count: int
+    by_barber: list[BarberRevenue]
+
+
+class DashboardHistory(BaseModel):
+    current_month_total: float
+    weeks: list[WeekRevenue]

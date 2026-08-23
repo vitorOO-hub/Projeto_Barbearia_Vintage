@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardRevenue, fetchDashboardSummary } from "../api/dashboard";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrencyBR } from "../lib/format";
+import { OverviewModal } from "../components/OverviewModal";
 
 export function Dashboard() {
   const { user } = useAuth();
+  const [showOverview, setShowOverview] = useState(false);
   const { data, isLoading } = useQuery({ queryKey: ["dashboard-summary"], queryFn: fetchDashboardSummary });
   const { data: revenue } = useQuery({
     queryKey: ["dashboard-revenue"],
@@ -18,7 +21,14 @@ export function Dashboard() {
 
   return (
     <div className="page-shell">
-      <h1 className="page-title">Resumo</h1>
+      <div className="page-header">
+        <h1 className="page-title">Resumo</h1>
+        {user?.is_admin && (
+          <button onClick={() => setShowOverview(true)} className="btn-secondary">
+            Visão geral
+          </button>
+        )}
+      </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="card">
@@ -60,6 +70,8 @@ export function Dashboard() {
           </ul>
         </>
       )}
+
+      {showOverview && <OverviewModal onClose={() => setShowOverview(false)} />}
     </div>
   );
 }
