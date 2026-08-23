@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Link, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, Link, Outlet, useLocation } from "react-router-dom";
 import { Login } from "./pages/Login";
 import { Agenda } from "./pages/Agenda";
 import { Clientes } from "./pages/Clientes";
@@ -6,14 +6,29 @@ import { Servicos } from "./pages/Servicos";
 import { Dashboard } from "./pages/Dashboard";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 
+const NAV_ITEMS = [
+  { to: "/agenda", label: "Agenda" },
+  { to: "/clientes", label: "Clientes" },
+  { to: "/servicos", label: "Serviços" },
+  { to: "/dashboard", label: "Resumo" },
+];
+
 function Layout() {
+  const location = useLocation();
+
   return (
-    <div>
-      <nav className="flex gap-4 border-b bg-white p-4">
-        <Link to="/agenda" className="font-medium text-gray-700">Agenda</Link>
-        <Link to="/clientes" className="font-medium text-gray-700">Clientes</Link>
-        <Link to="/servicos" className="font-medium text-gray-700">Serviços</Link>
-        <Link to="/dashboard" className="font-medium text-gray-700">Resumo</Link>
+    <div className="min-h-screen bg-cream">
+      <nav className="nav-bar">
+        <span className="mr-2 hidden font-display text-lg font-semibold text-ink sm:inline">Barbearia Vintage</span>
+        {NAV_ITEMS.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={`nav-link ${location.pathname === item.to ? "nav-link-active" : ""}`}
+          >
+            {item.label}
+          </Link>
+        ))}
       </nav>
       <Outlet />
     </div>
