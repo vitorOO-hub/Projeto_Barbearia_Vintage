@@ -29,6 +29,23 @@ export interface ServiceOption {
   duration_minutes: number;
 }
 
+export interface AvailabilityResult {
+  available: boolean;
+  conflict_with: string | null;
+}
+
+export async function checkAvailability(params: {
+  barberId: string;
+  date: string;
+  time: string;
+  serviceId: string;
+}): Promise<AvailabilityResult> {
+  const { data } = await apiClient.get<AvailabilityResult>("/api/v1/appointments/check-availability", {
+    params: { barber_id: params.barberId, date: params.date, time: params.time, service_id: params.serviceId },
+  });
+  return data;
+}
+
 export async function fetchAppointments(date: string): Promise<AppointmentDetail[]> {
   const { data } = await apiClient.get<AppointmentDetail[]>("/api/v1/appointments", { params: { date } });
   return data;
