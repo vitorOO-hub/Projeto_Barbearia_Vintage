@@ -4,34 +4,34 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../context/ToastContext";
 import { apiClient } from "../api/client";
-import { Barbeiros } from "./Barbeiros";
+import { Cabeleireiros } from "./Cabeleireiros";
 
 vi.mock("../api/client", async () => {
   const actual = await vi.importActual<typeof import("../api/client")>("../api/client");
   return { ...actual, apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } };
 });
 
-function renderBarbeiros() {
+function renderCabeleireiros() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <Barbeiros />
+        <Cabeleireiros />
       </ToastProvider>
     </QueryClientProvider>
   );
 }
 
-describe("Barbeiros page", () => {
+describe("Cabeleireiros page", () => {
   beforeEach(() => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: [{ id: "b1", name: "Carlos Silva" }] });
   });
 
   it("lists barbers and creates a new one", async () => {
-    renderBarbeiros();
+    renderCabeleireiros();
     await waitFor(() => expect(screen.getByText("Carlos Silva")).toBeInTheDocument());
 
-    const saveButton = screen.getByRole("button", { name: "Salvar barbeiro" });
+    const saveButton = screen.getByRole("button", { name: "Salvar cabeleireiro" });
     expect(saveButton).toBeDisabled();
 
     await userEvent.type(screen.getByPlaceholderText("Nome"), "Marcos Souza");
@@ -44,11 +44,11 @@ describe("Barbeiros page", () => {
   });
 
   it("edits a barber's name inline", async () => {
-    renderBarbeiros();
+    renderCabeleireiros();
     await waitFor(() => expect(screen.getByText("Carlos Silva")).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole("button", { name: "Editar barbeiro" }));
-    const editInput = screen.getByLabelText("Editar nome do barbeiro");
+    await userEvent.click(screen.getByRole("button", { name: "Editar cabeleireiro" }));
+    const editInput = screen.getByLabelText("Editar nome do cabeleireiro");
     await userEvent.clear(editInput);
     await userEvent.type(editInput, "Carlos S. Silva");
 
@@ -61,10 +61,10 @@ describe("Barbeiros page", () => {
   });
 
   it("asks for confirmation before removing a barber", async () => {
-    renderBarbeiros();
+    renderCabeleireiros();
     await waitFor(() => expect(screen.getByText("Carlos Silva")).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole("button", { name: "Remover barbeiro" }));
+    await userEvent.click(screen.getByRole("button", { name: "Remover cabeleireiro" }));
     expect(screen.getByText(/tem certeza/i)).toBeInTheDocument();
 
     vi.mocked(apiClient.delete).mockResolvedValue({ data: null });

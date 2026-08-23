@@ -5,7 +5,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
 
-export function Barbeiros() {
+export function Cabeleireiros() {
   const [name, setName] = useState("");
   const [editTarget, setEditTarget] = useState<Barber | null>(null);
   const [editName, setEditName] = useState("");
@@ -20,7 +20,7 @@ export function Barbeiros() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["barbers-page"] });
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
-      toast.success("Barbeiro cadastrado com sucesso.");
+      toast.success("Cabeleireiro cadastrado com sucesso.");
       setName("");
     },
     onError: (error) => toast.error(translateApiError(error)),
@@ -31,7 +31,7 @@ export function Barbeiros() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["barbers-page"] });
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
-      toast.success("Barbeiro atualizado.");
+      toast.success("Cabeleireiro atualizado.");
       setEditTarget(null);
     },
     onError: (error) => toast.error(translateApiError(error)),
@@ -42,7 +42,7 @@ export function Barbeiros() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["barbers-page"] });
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
-      toast.success("Barbeiro removido.");
+      toast.success("Cabeleireiro removido.");
       setRemoveTarget(null);
     },
     onError: (error) => toast.error(translateApiError(error)),
@@ -55,7 +55,7 @@ export function Barbeiros() {
 
   return (
     <div className="page-shell">
-      <h1 className="page-title">Barbeiros</h1>
+      <h1 className="page-title">Cabeleireiros</h1>
 
       <div className="card mt-4 flex flex-wrap items-end gap-2">
         <div className="w-full sm:w-auto">
@@ -71,7 +71,7 @@ export function Barbeiros() {
           />
         </div>
         <button onClick={() => createMutation.mutate()} disabled={!name} className="btn-primary w-full sm:w-auto">
-          Salvar barbeiro
+          Salvar cabeleireiro
         </button>
       </div>
 
@@ -81,7 +81,7 @@ export function Barbeiros() {
             {editTarget?.id === b.id ? (
               <div className="flex w-full flex-wrap items-center gap-3">
                 <input
-                  aria-label="Editar nome do barbeiro"
+                  aria-label="Editar nome do cabeleireiro"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="field-input mt-0 min-w-[160px] flex-1"
@@ -103,23 +103,23 @@ export function Barbeiros() {
               <>
                 <p className="min-w-0 font-medium text-ink">{b.name}</p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <button onClick={() => startEdit(b)} className="link-action" aria-label="Editar barbeiro">
-                    Editar barbeiro
+                  <button onClick={() => startEdit(b)} className="link-action" aria-label="Editar cabeleireiro">
+                    Editar cabeleireiro
                   </button>
-                  <button onClick={() => setRemoveTarget(b)} className="link-danger" aria-label="Remover barbeiro">
-                    Remover barbeiro
+                  <button onClick={() => setRemoveTarget(b)} className="link-danger" aria-label="Remover cabeleireiro">
+                    Remover cabeleireiro
                   </button>
                 </div>
               </>
             )}
           </li>
         ))}
-        {barbers.length === 0 && <p className="empty-state">Nenhum barbeiro encontrado.</p>}
+        {barbers.length === 0 && <p className="empty-state">Nenhum cabeleireiro encontrado.</p>}
       </ul>
 
       <ConfirmModal
         open={removeTarget !== null}
-        title="Remover barbeiro"
+        title="Remover cabeleireiro"
         message={`Tem certeza que deseja remover ${removeTarget?.name}? Agendamentos existentes impedem a remoção.`}
         onCancel={() => setRemoveTarget(null)}
         onConfirm={() => removeTarget && removeMutation.mutate(removeTarget.id)}

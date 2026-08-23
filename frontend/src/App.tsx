@@ -3,7 +3,7 @@ import { Login } from "./pages/Login";
 import { Agenda } from "./pages/Agenda";
 import { Clientes } from "./pages/Clientes";
 import { Servicos } from "./pages/Servicos";
-import { Barbeiros } from "./pages/Barbeiros";
+import { Cabeleireiros } from "./pages/Cabeleireiros";
 import { Dashboard } from "./pages/Dashboard";
 import { Usuarios } from "./pages/Usuarios";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { to: "/agenda", label: "Agenda" },
   { to: "/clientes", label: "Clientes" },
   { to: "/servicos", label: "Serviços" },
-  { to: "/barbeiros", label: "Barbeiros" },
+  { to: "/cabeleireiros", label: "Cabeleireiros" },
   { to: "/dashboard", label: "Resumo" },
 ];
 
@@ -60,7 +60,7 @@ export function App() {
           <Route path="/agenda" element={<Agenda />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/servicos" element={<Servicos />} />
-          <Route path="/barbeiros" element={<Barbeiros />} />
+          <Route path="/cabeleireiros" element={<Cabeleireiros />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route element={<AdminRoute />}>
             <Route path="/usuarios" element={<Usuarios />} />
