@@ -7,7 +7,6 @@ import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EMAIL_ERROR = "O e-mail deve ser do tipo email@gmail.com";
 
 export function Clientes() {
   const [search, setSearch] = useState("");
@@ -85,7 +84,6 @@ export function Clientes() {
             required
             className="field-input"
           />
-          {emailInvalid && <p className="field-error">{EMAIL_ERROR}</p>}
         </div>
         <div>
           <label htmlFor="client-phone-new" className="field-label">
