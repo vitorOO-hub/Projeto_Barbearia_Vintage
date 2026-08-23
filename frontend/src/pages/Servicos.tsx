@@ -40,7 +40,7 @@ export function Servicos() {
       <h1 className="page-title">Serviços</h1>
 
       <div className="card mt-4 flex flex-wrap items-end gap-2">
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="service-name" className="field-label">
             Nome
           </label>
@@ -52,7 +52,7 @@ export function Servicos() {
             className="field-input"
           />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="service-duration" className="field-label">
             Duração em minutos
           </label>
@@ -62,10 +62,10 @@ export function Servicos() {
             value={duration}
             onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
             placeholder="Ex: 30"
-            className="field-input w-36"
+            className="field-input sm:w-36"
           />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="service-price" className="field-label">
             Preço em reais
           </label>
@@ -75,10 +75,14 @@ export function Servicos() {
             value={price}
             onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))}
             placeholder="R$ 0,00"
-            className="field-input w-36"
+            className="field-input sm:w-36"
           />
         </div>
-        <button onClick={() => createMutation.mutate()} disabled={!name || duration === "" || price === ""} className="btn-primary">
+        <button
+          onClick={() => createMutation.mutate()}
+          disabled={!name || duration === "" || price === ""}
+          className="btn-primary w-full sm:w-auto"
+        >
           Salvar serviço
         </button>
       </div>
@@ -86,7 +90,7 @@ export function Servicos() {
       <ul className="mt-4">
         {services.map((s) => (
           <li key={s.id} className="list-row">
-            <div>
+            <div className="min-w-0">
               <p className="font-medium text-ink">{s.name}</p>
               <p className="text-sm text-ink-soft">
                 {s.duration_minutes} min · {formatCurrencyBR(s.price)}
