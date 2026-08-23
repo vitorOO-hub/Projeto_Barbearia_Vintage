@@ -32,6 +32,7 @@ describe("Agenda page", () => {
               id: "a1",
               client_id: "c1",
               service_id: "s1",
+              barber_id: "b1",
               appointment_date: "2026-08-22",
               appointment_time: "14:00:00",
               status: "agendado",
@@ -40,6 +41,7 @@ describe("Agenda page", () => {
               service_name: "Corte",
               service_price: 40,
               service_duration_minutes: 30,
+              barber_name: "Carlos Silva",
             },
           ],
         });
@@ -107,5 +109,15 @@ describe("Agenda page", () => {
     // Form interaction detail (client/service selection) is covered by AppointmentFormModal's
     // own integration inside this same submit flow; here we just confirm the error surfaces.
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+  });
+
+  it("switches to the Semana view and renders the appointment there", async () => {
+    renderAgenda();
+    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Semana" }));
+
+    await waitFor(() => expect(screen.getAllByText("João Silva").length).toBeGreaterThan(0));
+    expect(screen.queryByText("Nenhum agendamento para este dia.")).not.toBeInTheDocument();
   });
 });
