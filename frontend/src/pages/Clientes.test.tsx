@@ -25,13 +25,47 @@ function renderClientes() {
 describe("Clientes page", () => {
   beforeEach(() => {
     vi.mocked(apiClient.get).mockResolvedValue({
-      data: [{ id: "c1", name: "João Silva", email: "joao@x.com", notes: null, active: true }],
+      data: [{ id: "c1", name: "João Silva", email: "joao@x.com", phone: "(11) 957645612", notes: null, active: true }],
     });
   });
 
   it("lists clients", async () => {
     renderClientes();
     await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
+  });
+
+  it("shows the client's phone in the list when present", async () => {
+    renderClientes();
+    await waitFor(() => expect(screen.getByText("(11) 957645612")).toBeInTheDocument());
+  });
+
+  it("keeps Salvar cliente disabled until name and email are both filled, then submits with phone", async () => {
+    renderClientes();
+    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
+
+    const saveButton = screen.getByRole("button", { name: "Salvar cliente" });
+    expect(saveButton).toBeDisabled();
+
+    await userEvent.type(screen.getByPlaceholderText("Nome"), "Maria Costa");
+    expect(saveButton).toBeDisabled();
+
+    await userEvent.type(screen.getByPlaceholderText("E-mail"), "maria@x.com");
+    expect(saveButton).not.toBeDisabled();
+
+    await userEvent.type(screen.getByPlaceholderText("(11) 957645612"), "(11) 912345678");
+
+    vi.mocked(apiClient.post).mockResolvedValue({
+      data: { id: "c2", name: "Maria Costa", email: "maria@x.com", phone: "(11) 912345678", notes: null, active: true },
+    });
+    await userEvent.click(saveButton);
+
+    await waitFor(() =>
+      expect(apiClient.post).toHaveBeenCalledWith("/api/v1/clients", {
+        name: "Maria Costa",
+        email: "maria@x.com",
+        phone: "(11) 912345678",
+      })
+    );
   });
 
   it("asks for confirmation before removing a client, then soft-deletes it", async () => {
@@ -67,6 +101,7 @@ describe("Clientes page", () => {
       expect(apiClient.put).toHaveBeenCalledWith("/api/v1/clients/c1", {
         name: "João S. Silva",
         email: "joao@x.com",
+        phone: "(11) 957645612",
       })
     );
   });

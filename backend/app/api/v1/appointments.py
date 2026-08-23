@@ -200,7 +200,12 @@ async def check_availability(
 
 
 @router.put("/{appointment_id}", response_model=AppointmentOut)
-async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate, db: AsyncSession = Depends(get_db)):
+async def update_appointment(
+    appointment_id: uuid.UUID,
+    data: AppointmentUpdate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     appt = await _get_appointment_or_404(appointment_id, db)
     updates = data.model_dump(exclude_unset=True)
 
@@ -208,15 +213,18 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
     new_time = updates.get("appointment_time", appt.appointment_time)
     new_barber_id = updates.get("barber_id", appt.barber_id)
     new_service_id = updates.get("service_id", appt.service_id)
+    time_changed = (new_date, new_time) != (appt.appointment_date, appt.appointment_time)
+
+    service_row = None
     if (new_date, new_time, new_barber_id, new_service_id) != (
         appt.appointment_date,
         appt.appointment_time,
         appt.barber_id,
         appt.service_id,
     ):
-        new_service_row = await _get_service_or_404(new_service_id, db)
+        service_row = await _get_service_or_404(new_service_id, db)
         conflict = await _has_conflict(
-            db, new_date, new_time, new_barber_id, new_service_row.duration_minutes, exclude_id=appt.id
+            db, new_date, new_time, new_barber_id, service_row.duration_minutes, exclude_id=appt.id
         )
         if conflict is not None:
             conflict_service = (await db.execute(select(Service).where(Service.id == conflict.service_id))).scalar_one()
@@ -227,12 +235,33 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
 
     for field, value in updates.items():
         setattr(appt, field, value)
+
+    if time_changed:
+        appt.confirmation_email_sent = False
+
     try:
         await db.commit()
     except IntegrityError:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este barbeiro já tem um agendamento neste horário.")
     await db.refresh(appt)
+
+    if time_changed:
+        client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
+        if service_row is None:
+            service_row = (await db.execute(select(Service).where(Service.id == appt.service_id))).scalar_one()
+        background_tasks.add_task(
+            notify_n8n,
+            {
+                "appointment_id": str(appt.id),
+                "client_name": client_row.name,
+                "client_email": client_row.email,
+                "service_name": service_row.name,
+                "appointment_date": appt.appointment_date.isoformat(),
+                "appointment_time": appt.appointment_time.isoformat(),
+                "status": appt.status.value,
+            },
+        )
     return appt
 
 

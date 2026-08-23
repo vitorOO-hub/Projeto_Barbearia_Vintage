@@ -58,6 +58,7 @@ describe("AppointmentFormModal", () => {
       client_id: "c1",
       service_id: "s1",
       barber_id: "b1",
+      appointment_date: "2026-08-25",
       appointment_time: "14:00:00",
     });
   });

@@ -242,6 +242,36 @@ async def test_update_appointment_same_slot_does_not_conflict_with_itself(client
 
 
 @pytest.mark.anyio
+async def test_update_appointment_time_resets_confirmation_email_sent(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    resp = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    appt_id = resp.json()["id"]
+    await client.put(
+        f"/api/v1/appointments/{appt_id}",
+        json={"confirmation_email_sent": True},
+        headers=headers,
+    )
+
+    response = await client.put(
+        f"/api/v1/appointments/{appt_id}",
+        json={"appointment_time": "15:00:00"},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["confirmation_email_sent"] is False
+
+
+@pytest.mark.anyio
 async def test_update_appointment_to_same_slot_as_another_barber_conflicts(client, db_session):
     headers, c, s, b = await _setup(client, db_session)
     other_barber = Barber(name="Marcos Souza")

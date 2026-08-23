@@ -5,32 +5,33 @@ export function Dashboard() {
   const { data, isLoading } = useQuery({ queryKey: ["dashboard-summary"], queryFn: fetchDashboardSummary });
 
   if (isLoading || !data) {
-    return <div className="p-4 text-gray-500">Carregando...</div>;
+    return <div className="loading-state">Carregando...</div>;
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <h1 className="text-xl font-semibold">Resumo</h1>
+    <div className="page-shell">
+      <h1 className="page-title">Resumo</h1>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="rounded-lg bg-white p-4 shadow">
-          <p className="text-sm text-gray-500">Atendimentos hoje</p>
-          <p className="text-3xl font-semibold">{data.appointments_today}</p>
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="card">
+          <p className="text-sm text-ink-soft">Atendimentos hoje</p>
+          <p className="font-display text-3xl font-semibold text-ink">{data.appointments_today}</p>
         </div>
-        <div className="rounded-lg bg-white p-4 shadow">
-          <p className="text-sm text-gray-500">Atendimentos na semana</p>
-          <p className="text-3xl font-semibold">{data.appointments_this_week}</p>
+        <div className="card">
+          <p className="text-sm text-ink-soft">Atendimentos na semana</p>
+          <p className="font-display text-3xl font-semibold text-ink">{data.appointments_this_week}</p>
         </div>
       </div>
 
-      <h2 className="mt-6 text-lg font-medium">Serviços mais procurados</h2>
-      <ul className="mt-2 divide-y">
+      <h2 className="section-title">Serviços mais procurados</h2>
+      <ul className="card mt-2 py-0">
         {data.top_services.map((s) => (
-          <li key={s.service_name} className="flex justify-between py-2">
-            <span>{s.service_name}</span>
-            <span className="text-gray-500">{s.count}</span>
+          <li key={s.service_name} className="list-row">
+            <span className="text-ink">{s.service_name}</span>
+            <span className="font-medium text-ink-soft">{s.count}</span>
           </li>
         ))}
+        {data.top_services.length === 0 && <p className="py-3 text-ink-soft">Sem dados ainda.</p>}
       </ul>
     </div>
   );

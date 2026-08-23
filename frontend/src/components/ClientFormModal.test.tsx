@@ -8,7 +8,7 @@ describe("ClientFormModal", () => {
     const onSubmit = vi.fn();
     render(
       <ClientFormModal
-        initialValues={{ name: "João Silva", email: "joao@x.com", notes: "Prefere corte curto" }}
+        initialValues={{ name: "João Silva", email: "joao@x.com", phone: "(11) 957645612", notes: "Prefere corte curto" }}
         onSubmit={onSubmit}
         onClose={vi.fn()}
       />
@@ -16,6 +16,7 @@ describe("ClientFormModal", () => {
 
     expect(screen.getByLabelText("Nome")).toHaveValue("João Silva");
     expect(screen.getByLabelText("E-mail")).toHaveValue("joao@x.com");
+    expect(screen.getByLabelText("Telefone")).toHaveValue("(11) 957645612");
     expect(screen.getByLabelText("Observações")).toHaveValue("Prefere corte curto");
 
     await userEvent.clear(screen.getByLabelText("Nome"));
@@ -25,14 +26,27 @@ describe("ClientFormModal", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       name: "João S. Silva",
       email: "joao@x.com",
+      phone: "(11) 957645612",
       notes: "Prefere corte curto",
     });
+  });
+
+  it("shows a placeholder on the phone field", () => {
+    render(
+      <ClientFormModal
+        initialValues={{ name: "João Silva", email: "joao@x.com", phone: null, notes: null }}
+        onSubmit={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByPlaceholderText("Telefone")).toBeInTheDocument();
   });
 
   it("disables the save button when the name is cleared", async () => {
     render(
       <ClientFormModal
-        initialValues={{ name: "João Silva", email: null, notes: null }}
+        initialValues={{ name: "João Silva", email: "joao@x.com", phone: null, notes: null }}
         onSubmit={vi.fn()}
         onClose={vi.fn()}
       />
@@ -42,10 +56,27 @@ describe("ClientFormModal", () => {
     expect(screen.getByRole("button", { name: "Salvar cliente" })).toBeDisabled();
   });
 
+  it("disables the save button when the email is cleared", async () => {
+    render(
+      <ClientFormModal
+        initialValues={{ name: "João Silva", email: "joao@x.com", phone: null, notes: null }}
+        onSubmit={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    await userEvent.clear(screen.getByLabelText("E-mail"));
+    expect(screen.getByRole("button", { name: "Salvar cliente" })).toBeDisabled();
+  });
+
   it("calls onClose when Cancelar is clicked", async () => {
     const onClose = vi.fn();
     render(
-      <ClientFormModal initialValues={{ name: "João Silva", email: null, notes: null }} onSubmit={vi.fn()} onClose={onClose} />
+      <ClientFormModal
+        initialValues={{ name: "João Silva", email: "joao@x.com", phone: null, notes: null }}
+        onSubmit={vi.fn()}
+        onClose={onClose}
+      />
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));

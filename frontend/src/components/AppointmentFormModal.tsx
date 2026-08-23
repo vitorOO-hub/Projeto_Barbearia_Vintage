@@ -14,7 +14,13 @@ interface AppointmentFormModalProps {
     barber_id: string;
     appointment_time: string;
   };
-  onSubmit: (data: { client_id: string; service_id: string; barber_id: string; appointment_time: string }) => void;
+  onSubmit: (data: {
+    client_id: string;
+    service_id: string;
+    barber_id: string;
+    appointment_date: string;
+    appointment_time: string;
+  }) => void;
   onClose: () => void;
 }
 
@@ -24,6 +30,7 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   const [clientId, setClientId] = useState(initialValues?.client_id ?? "");
   const [serviceId, setServiceId] = useState(initialValues?.service_id ?? "");
   const [barberId, setBarberId] = useState(initialValues?.barber_id ?? "");
+  const [appointmentDate, setAppointmentDate] = useState(date);
   const [time, setTime] = useState(initialValues?.appointment_time.slice(0, 5) ?? "");
   const [isClientFieldFocused, setIsClientFieldFocused] = useState(false);
 
@@ -53,11 +60,22 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   });
 
   return (
-    <div role="dialog" className="fixed inset-0 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-        <h2 className="text-lg font-semibold">{isEdit ? "Editar agendamento" : "Novo agendamento"} — {date}</h2>
+    <div role="dialog" className="modal-backdrop">
+      <div className="modal-panel">
+        <h2 className="modal-title">{isEdit ? "Editar agendamento" : "Novo agendamento"}</h2>
 
-        <label htmlFor="client" className="mt-4 block text-sm font-medium text-gray-700">
+        <label htmlFor="appointment-date" className="field-label mt-4">
+          Dia
+        </label>
+        <input
+          id="appointment-date"
+          type="date"
+          value={appointmentDate}
+          onChange={(e) => setAppointmentDate(e.target.value)}
+          className="field-input"
+        />
+
+        <label htmlFor="client" className="field-label mt-4">
           Cliente
         </label>
         <div className="relative">
@@ -72,10 +90,10 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
             onBlur={() => setIsClientFieldFocused(false)}
             placeholder="Buscar cliente por nome"
             autoComplete="off"
-            className="mt-1 w-full rounded border px-3 py-2"
+            className="field-input"
           />
           {showSuggestions && (
-            <ul className="absolute z-10 mt-1 w-full rounded border bg-white shadow-lg" role="listbox">
+            <ul className="absolute z-10 mt-1 w-full rounded-md border border-line bg-paper shadow-panel" role="listbox">
               {clients.map((c) => (
                 <li key={c.id}>
                   <button
@@ -86,7 +104,7 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
                       e.preventDefault();
                       selectClient(c);
                     }}
-                    className="block w-full px-3 py-2 text-left hover:bg-gray-100"
+                    className="block w-full px-3 py-2 text-left text-ink hover:bg-cream"
                   >
                     {c.name}
                   </button>
@@ -96,8 +114,8 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
           )}
         </div>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">Serviço</label>
-        <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} className="mt-1 w-full rounded border px-3 py-2">
+        <label className="field-label mt-4">Serviço</label>
+        <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} className="field-input">
           <option value="">Selecione o serviço</option>
           {services.map((s) => (
             <option key={s.id} value={s.id}>
@@ -106,20 +124,15 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
           ))}
         </select>
         {selectedService && (
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="field-hint">
             Duração: {selectedService.duration_minutes} min · {formatCurrencyBR(selectedService.price)}
           </p>
         )}
 
-        <label htmlFor="barber" className="mt-4 block text-sm font-medium text-gray-700">
+        <label htmlFor="barber" className="field-label mt-4">
           Cabeleireiro
         </label>
-        <select
-          id="barber"
-          value={barberId}
-          onChange={(e) => setBarberId(e.target.value)}
-          className="mt-1 w-full rounded border px-3 py-2"
-        >
+        <select id="barber" value={barberId} onChange={(e) => setBarberId(e.target.value)} className="field-input">
           <option value="">Selecione o cabeleireiro</option>
           {barbers.map((b) => (
             <option key={b.id} value={b.id}>
@@ -128,26 +141,32 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
           ))}
         </select>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">Horário</label>
-        <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
+        <label className="field-label mt-4">Horário</label>
+        <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="field-input" />
         {availabilityEnabled && availability && (
-          <p className={`mt-1 text-sm ${availability.available ? "text-green-700" : "text-red-700"}`}>
+          <p className={`field-hint ${availability.available ? "text-green-700" : "text-red-700"}`}>
             {availability.available
               ? "Horário disponível"
               : `Este barbeiro já tem atendimento das ${availability.conflict_with}`}
           </p>
         )}
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="rounded px-4 py-2 text-gray-700 hover:bg-gray-100">
+        <div className="modal-actions">
+          <button onClick={onClose} className="btn-ghost">
             Cancelar
           </button>
           <button
             onClick={() =>
-              onSubmit({ client_id: clientId, service_id: serviceId, barber_id: barberId, appointment_time: `${time}:00` })
+              onSubmit({
+                client_id: clientId,
+                service_id: serviceId,
+                barber_id: barberId,
+                appointment_date: appointmentDate,
+                appointment_time: `${time}:00`,
+              })
             }
-            disabled={!clientId || !serviceId || !barberId || !time}
-            className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
+            disabled={!clientId || !serviceId || !barberId || !appointmentDate || !time}
+            className="btn-primary"
           >
             Salvar agendamento
           </button>

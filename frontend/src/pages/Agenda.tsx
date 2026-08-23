@@ -62,8 +62,13 @@ export function Agenda() {
   }
 
   const createMutation = useMutation({
-    mutationFn: (payload: { client_id: string; service_id: string; barber_id: string; appointment_time: string }) =>
-      createAppointment({ ...payload, appointment_date: date }),
+    mutationFn: (payload: {
+      client_id: string;
+      service_id: string;
+      barber_id: string;
+      appointment_date: string;
+      appointment_time: string;
+    }) => createAppointment(payload),
     onSuccess: () => {
       invalidate();
       toast.success("Agendamento criado e cliente notificado por e-mail.");
@@ -78,12 +83,14 @@ export function Agenda() {
       client_id: string;
       service_id: string;
       barber_id: string;
+      appointment_date: string;
       appointment_time: string;
     }) =>
       updateAppointment(payload.id, {
         client_id: payload.client_id,
         service_id: payload.service_id,
         barber_id: payload.barber_id,
+        appointment_date: payload.appointment_date,
         appointment_time: payload.appointment_time,
       }),
     onSuccess: () => {
@@ -114,22 +121,22 @@ export function Agenda() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Agenda</h1>
-        <div className="flex gap-2">
+    <div className="page-shell">
+      <div className="page-header">
+        <h1 className="page-title">Agenda</h1>
+        <div className="flex gap-1 rounded-md border border-line bg-paper p-1">
           <button
             onClick={() => setView("lista")}
-            className={`rounded px-3 py-1.5 text-sm font-medium ${
-              view === "lista" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700"
+            className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+              view === "lista" ? "bg-ink text-cream" : "text-ink-soft hover:bg-cream"
             }`}
           >
             Lista
           </button>
           <button
             onClick={() => setView("semana")}
-            className={`rounded px-3 py-1.5 text-sm font-medium ${
-              view === "semana" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700"
+            className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+              view === "semana" ? "bg-ink text-cream" : "text-ink-soft hover:bg-cream"
             }`}
           >
             Semana
@@ -139,22 +146,21 @@ export function Agenda() {
 
       {view === "lista" && (
         <>
-          <div className="mt-4 flex items-center justify-between">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded border px-3 py-2" />
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input mt-0 w-auto" />
+            <button onClick={() => setShowForm(true)} className="btn-primary">
+              Novo agendamento
+            </button>
           </div>
 
-          <button onClick={() => setShowForm(true)} className="mt-4 rounded bg-gray-900 px-4 py-2 text-white">
-            Novo agendamento
-          </button>
+          {isLoading && <p className="loading-state">Carregando...</p>}
 
-          {isLoading && <p className="mt-6 text-gray-500">Carregando...</p>}
-
-          <ul className="mt-6 divide-y">
+          <ul className="mt-6">
             {appointments.map((appt) => (
-              <li key={appt.id} className="flex items-center justify-between py-3">
+              <li key={appt.id} className="list-row">
                 <div>
-                  <p className="font-medium">{appt.client_name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-ink">{appt.client_name}</p>
+                  <p className="text-sm text-ink-soft">
                     <span>{formatTimeBR(appt.appointment_time)}</span> · <span>{appt.service_name}</span> ·{" "}
                     <span>{appt.barber_name}</span> · <span>{formatCurrencyBR(appt.service_price)}</span>
                   </p>
@@ -169,7 +175,7 @@ export function Agenda() {
                     aria-label="Status do agendamento"
                     value={appt.status}
                     onChange={(e) => statusMutation.mutate({ id: appt.id, status: e.target.value })}
-                    className="rounded border px-2 py-1 text-sm"
+                    className="rounded-md border border-line bg-paper px-2 py-1 text-sm text-ink"
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -177,25 +183,17 @@ export function Agenda() {
                       </option>
                     ))}
                   </select>
-                  <button
-                    onClick={() => setEditTarget(appt)}
-                    className="text-sm text-gray-700 hover:underline"
-                    aria-label="Editar agendamento"
-                  >
+                  <button onClick={() => setEditTarget(appt)} className="link-action" aria-label="Editar agendamento">
                     Editar agendamento
                   </button>
-                  <button
-                    onClick={() => setRemoveTarget(appt)}
-                    className="text-sm text-red-600 hover:underline"
-                    aria-label="Remover agendamento"
-                  >
+                  <button onClick={() => setRemoveTarget(appt)} className="link-danger" aria-label="Remover agendamento">
                     Remover agendamento
                   </button>
                 </div>
               </li>
             ))}
             {!isLoading && appointments.length === 0 && (
-              <p className="py-6 text-gray-500">Nenhum agendamento para este dia.</p>
+              <p className="empty-state mt-2">Nenhum agendamento para este dia.</p>
             )}
           </ul>
         </>

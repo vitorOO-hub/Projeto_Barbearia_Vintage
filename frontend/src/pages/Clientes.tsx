@@ -6,10 +6,15 @@ import { ClientFormModal } from "../components/ClientFormModal";
 import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_ERROR = "O e-mail deve ser do tipo email@gmail.com";
+
 export function Clientes() {
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const emailInvalid = email.length > 0 && !EMAIL_REGEX.test(email);
   const [removeTarget, setRemoveTarget] = useState<Client | null>(null);
   const [editTarget, setEditTarget] = useState<Client | null>(null);
   const queryClient = useQueryClient();
@@ -18,12 +23,13 @@ export function Clientes() {
   const { data: clients = [] } = useQuery({ queryKey: ["clients-page", search], queryFn: () => fetchClients(search) });
 
   const createMutation = useMutation({
-    mutationFn: () => createClient({ name, email: email || undefined }),
+    mutationFn: () => createClient({ name, email, phone: phone || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente cadastrado com sucesso.");
       setName("");
       setEmail("");
+      setPhone("");
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -39,8 +45,8 @@ export function Clientes() {
   });
 
   const editMutation = useMutation({
-    mutationFn: (payload: { id: string; name: string; email?: string; notes?: string }) =>
-      updateClient(payload.id, { name: payload.name, email: payload.email, notes: payload.notes }),
+    mutationFn: (payload: { id: string; name: string; email: string; phone?: string; notes?: string }) =>
+      updateClient(payload.id, { name: payload.name, email: payload.email, phone: payload.phone, notes: payload.notes }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente atualizado.");
@@ -50,16 +56,53 @@ export function Clientes() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <h1 className="text-xl font-semibold">Clientes</h1>
+    <div className="page-shell">
+      <h1 className="page-title">Clientes</h1>
 
-      <div className="mt-4 flex gap-2">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" className="rounded border px-3 py-2" />
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail (opcional)" className="rounded border px-3 py-2" />
+      <div className="card mt-4 flex flex-wrap items-end gap-2">
+        <div>
+          <label htmlFor="client-name-new" className="field-label">
+            Nome
+          </label>
+          <input
+            id="client-name-new"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nome"
+            className="field-input"
+          />
+        </div>
+        <div>
+          <label htmlFor="client-email-new" className="field-label">
+            E-mail
+          </label>
+          <input
+            id="client-email-new"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="E-mail"
+            required
+            className="field-input"
+          />
+          {emailInvalid && <p className="field-error">{EMAIL_ERROR}</p>}
+        </div>
+        <div>
+          <label htmlFor="client-phone-new" className="field-label">
+            Telefone
+          </label>
+          <input
+            id="client-phone-new"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(11) 957645612"
+            className="field-input"
+          />
+        </div>
         <button
           onClick={() => createMutation.mutate()}
-          disabled={!name}
-          className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
+          disabled={!name || !email || emailInvalid}
+          className="btn-primary"
         >
           Salvar cliente
         </button>
@@ -69,31 +112,34 @@ export function Clientes() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Buscar por nome"
-        className="mt-4 w-full rounded border px-3 py-2"
+        aria-label="Buscar cliente por nome"
+        className="field-input mt-4"
       />
 
-      <ul className="mt-4 divide-y">
+      <ul className="mt-4">
         {clients.map((c) => (
-          <li key={c.id} className="flex items-center justify-between py-3">
+          <li key={c.id} className="list-row">
             <div>
-              <p className="font-medium">{c.name}</p>
-              {c.email && <p className="text-sm text-gray-500">{c.email}</p>}
+              <p className="font-medium text-ink">{c.name}</p>
+              {c.email && <p className="text-sm text-ink-soft">{c.email}</p>}
+              {c.phone && <p className="text-sm text-ink-soft">{c.phone}</p>}
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setEditTarget(c)} className="text-sm text-gray-700 hover:underline" aria-label="Editar cliente">
+              <button onClick={() => setEditTarget(c)} className="link-action" aria-label="Editar cliente">
                 Editar cliente
               </button>
-              <button onClick={() => setRemoveTarget(c)} className="text-sm text-red-600 hover:underline" aria-label="Remover cliente">
+              <button onClick={() => setRemoveTarget(c)} className="link-danger" aria-label="Remover cliente">
                 Remover cliente
               </button>
             </div>
           </li>
         ))}
+        {clients.length === 0 && <p className="empty-state">Nenhum cliente encontrado.</p>}
       </ul>
 
       {editTarget && (
         <ClientFormModal
-          initialValues={{ name: editTarget.name, email: editTarget.email, notes: editTarget.notes }}
+          initialValues={{ name: editTarget.name, email: editTarget.email, phone: editTarget.phone, notes: editTarget.notes }}
           onClose={() => setEditTarget(null)}
           onSubmit={(data) => editMutation.mutate({ id: editTarget.id, ...data })}
         />

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  PX_PER_MINUTE,
   GRID_START_MINUTES,
   minutesSinceMidnight,
   blockTop,

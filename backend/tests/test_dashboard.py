@@ -19,13 +19,14 @@ async def test_dashboard_summary_counts_and_top_services(client, db_session):
     await db_session.refresh(barba)
     await db_session.refresh(b)
 
+    today = date.today()
     db_session.add_all(
         [
-            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(9, 0), status=AppointmentStatus.concluido),
-            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(10, 0), status=AppointmentStatus.concluido),
-            Appointment(client_id=c.id, service_id=barba.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(11, 0), status=AppointmentStatus.agendado),
-            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(12, 0), status=AppointmentStatus.cancelado),
-            Appointment(client_id=c.id, service_id=barba.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(13, 0), status=AppointmentStatus.nao_compareceu),
+            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=today, appointment_time=time(9, 0), status=AppointmentStatus.concluido),
+            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=today, appointment_time=time(10, 0), status=AppointmentStatus.concluido),
+            Appointment(client_id=c.id, service_id=barba.id, barber_id=b.id, appointment_date=today, appointment_time=time(11, 0), status=AppointmentStatus.agendado),
+            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=today, appointment_time=time(12, 0), status=AppointmentStatus.cancelado),
+            Appointment(client_id=c.id, service_id=barba.id, barber_id=b.id, appointment_date=today, appointment_time=time(13, 0), status=AppointmentStatus.nao_compareceu),
         ]
     )
     await db_session.commit()

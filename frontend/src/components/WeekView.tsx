@@ -14,10 +14,10 @@ import {
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 const STATUS_BLOCK_CLASSES: Record<AppointmentDetail["status"], string> = {
-  agendado: "bg-blue-100 text-blue-900 border-blue-300",
-  concluido: "bg-green-100 text-green-900 border-green-300",
-  cancelado: "bg-gray-100 text-gray-700 border-gray-300",
-  nao_compareceu: "bg-red-100 text-red-900 border-red-300",
+  agendado: "bg-slate-soft text-slate-dark border-slate/40",
+  concluido: "bg-forest-soft text-forest-dark border-forest/40",
+  cancelado: "bg-line/60 text-ink-soft border-line",
+  nao_compareceu: "bg-brick-soft text-brick-dark border-brick/40",
 };
 
 const GRID_HEIGHT_PX = (GRID_END_MINUTES - GRID_START_MINUTES) * PX_PER_MINUTE;
@@ -159,7 +159,7 @@ export function WeekView({
     return (
       <div className="mt-6 animate-pulse space-y-2" aria-label="Carregando calendário">
         {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="h-8 rounded bg-gray-100" />
+          <div key={i} className="h-8 rounded-md bg-line/50" />
         ))}
       </div>
     );
@@ -168,17 +168,17 @@ export function WeekView({
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between">
-        <button onClick={onPrevWeek} className="rounded border px-3 py-1 text-sm hover:bg-gray-50">
+        <button onClick={onPrevWeek} className="btn-secondary">
           &lt; Anterior
         </button>
-        <button onClick={onNextWeek} className="rounded border px-3 py-1 text-sm hover:bg-gray-50">
+        <button onClick={onNextWeek} className="btn-secondary">
           Próxima &gt;
         </button>
       </div>
 
-      {appointments.length === 0 && <p className="mt-4 text-gray-500">Nenhum agendamento neste período.</p>}
+      {appointments.length === 0 && <p className="mt-4 text-ink-soft">Nenhum agendamento neste período.</p>}
 
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-line bg-paper p-2 shadow-card">
         <div className="grid min-w-[720px] grid-cols-[64px_repeat(7,1fr)]">
           <div />
           {days.map((day) => {
@@ -189,8 +189,8 @@ export function WeekView({
               <div
                 key={dayISO}
                 ref={isToday ? todayColumnRef : undefined}
-                className={`border-b p-2 text-center text-sm font-medium ${
-                  isToday ? "bg-gray-900 text-white" : "text-gray-700"
+                className={`rounded-t-md border-b p-2 text-center text-sm font-medium ${
+                  isToday ? "bg-ink text-cream" : "border-line text-ink-soft"
                 }`}
               >
                 {WEEKDAY_LABELS[day.getDay()]} {dayMonth}
