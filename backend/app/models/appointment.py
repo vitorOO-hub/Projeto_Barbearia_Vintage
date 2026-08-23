@@ -24,6 +24,7 @@ class Appointment(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id", ondelete="RESTRICT"), nullable=False)
     service_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("services.id", ondelete="RESTRICT"), nullable=False)
+    barber_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("barbers.id", ondelete="RESTRICT"), nullable=False)
     appointment_date: Mapped[date] = mapped_column(Date, nullable=False)
     appointment_time: Mapped[time] = mapped_column(Time, nullable=False)
     status: Mapped[AppointmentStatus] = mapped_column(

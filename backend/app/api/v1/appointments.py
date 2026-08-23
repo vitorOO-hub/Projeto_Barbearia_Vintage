@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps import get_current_user
 from app.db.session import get_db
 from app.integrations.n8n import notify_n8n
-from app.models import Appointment, Client, Service, User
+from app.models import Appointment, Barber, Client, Service, User
 from app.models.appointment import ACTIVE_STATUSES
 from app.schemas.appointment import (
     AppointmentCreate,
@@ -28,12 +28,14 @@ async def _has_conflict(
     db: AsyncSession,
     appointment_date,
     appointment_time,
+    barber_id,
     exclude_id: uuid.UUID | None = None,
 ) -> bool:
     query = select(Appointment).where(
         and_(
             Appointment.appointment_date == appointment_date,
             Appointment.appointment_time == appointment_time,
+            Appointment.barber_id == barber_id,
             Appointment.status.in_(ACTIVE_STATUSES),
         )
     )
@@ -58,7 +60,7 @@ async def create_appointment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if await _has_conflict(db, data.appointment_date, data.appointment_time):
+    if await _has_conflict(db, data.appointment_date, data.appointment_time, data.barber_id):
         raise CONFLICT_ERROR
 
     appt = Appointment(**data.model_dump(), created_by=current_user.id)
@@ -90,9 +92,10 @@ async def create_appointment(
 @router.get("", response_model=list[AppointmentDetailOut])
 async def list_appointments(date: date_type, db: AsyncSession = Depends(get_db)):
     query = (
-        select(Appointment, Client, Service)
+        select(Appointment, Client, Service, Barber)
         .join(Client, Appointment.client_id == Client.id)
         .join(Service, Appointment.service_id == Service.id)
+        .join(Barber, Appointment.barber_id == Barber.id)
         .where(Appointment.appointment_date == date)
         .order_by(Appointment.appointment_time)
     )
@@ -103,6 +106,7 @@ async def list_appointments(date: date_type, db: AsyncSession = Depends(get_db))
             id=appt.id,
             client_id=appt.client_id,
             service_id=appt.service_id,
+            barber_id=appt.barber_id,
             appointment_date=appt.appointment_date,
             appointment_time=appt.appointment_time,
             status=appt.status,
@@ -111,8 +115,9 @@ async def list_appointments(date: date_type, db: AsyncSession = Depends(get_db))
             service_name=service_row.name,
             service_price=float(service_row.price),
             service_duration_minutes=service_row.duration_minutes,
+            barber_name=barber_row.name,
         )
-        for appt, client_row, service_row in rows
+        for appt, client_row, service_row, barber_row in rows
     ]
 
 
@@ -123,8 +128,9 @@ async def update_appointment(appointment_id: uuid.UUID, data: AppointmentUpdate,
 
     new_date = updates.get("appointment_date", appt.appointment_date)
     new_time = updates.get("appointment_time", appt.appointment_time)
-    if (new_date, new_time) != (appt.appointment_date, appt.appointment_time):
-        if await _has_conflict(db, new_date, new_time, exclude_id=appt.id):
+    new_barber_id = updates.get("barber_id", appt.barber_id)
+    if (new_date, new_time, new_barber_id) != (appt.appointment_date, appt.appointment_time, appt.barber_id):
+        if await _has_conflict(db, new_date, new_time, new_barber_id, exclude_id=appt.id):
             raise CONFLICT_ERROR
 
     for field, value in updates.items():

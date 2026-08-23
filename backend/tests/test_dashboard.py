@@ -2,7 +2,7 @@ import pytest
 from datetime import date, time
 
 from app.core.security import hash_password
-from app.models import User, Client, Service, Appointment, AppointmentStatus
+from app.models import User, Client, Service, Barber, Appointment, AppointmentStatus
 
 
 @pytest.mark.anyio
@@ -11,19 +11,21 @@ async def test_dashboard_summary_counts_and_top_services(client, db_session):
     c = Client(name="João")
     corte = Service(name="Corte", duration_minutes=30, price=40)
     barba = Service(name="Barba", duration_minutes=20, price=25)
-    db_session.add_all([user, c, corte, barba])
+    b = Barber(name="Carlos Silva")
+    db_session.add_all([user, c, corte, barba, b])
     await db_session.commit()
     await db_session.refresh(c)
     await db_session.refresh(corte)
     await db_session.refresh(barba)
+    await db_session.refresh(b)
 
     db_session.add_all(
         [
-            Appointment(client_id=c.id, service_id=corte.id, appointment_date=date(2026, 8, 22), appointment_time=time(9, 0), status=AppointmentStatus.concluido),
-            Appointment(client_id=c.id, service_id=corte.id, appointment_date=date(2026, 8, 22), appointment_time=time(10, 0), status=AppointmentStatus.concluido),
-            Appointment(client_id=c.id, service_id=barba.id, appointment_date=date(2026, 8, 22), appointment_time=time(11, 0), status=AppointmentStatus.agendado),
-            Appointment(client_id=c.id, service_id=corte.id, appointment_date=date(2026, 8, 22), appointment_time=time(12, 0), status=AppointmentStatus.cancelado),
-            Appointment(client_id=c.id, service_id=barba.id, appointment_date=date(2026, 8, 22), appointment_time=time(13, 0), status=AppointmentStatus.nao_compareceu),
+            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(9, 0), status=AppointmentStatus.concluido),
+            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(10, 0), status=AppointmentStatus.concluido),
+            Appointment(client_id=c.id, service_id=barba.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(11, 0), status=AppointmentStatus.agendado),
+            Appointment(client_id=c.id, service_id=corte.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(12, 0), status=AppointmentStatus.cancelado),
+            Appointment(client_id=c.id, service_id=barba.id, barber_id=b.id, appointment_date=date(2026, 8, 22), appointment_time=time(13, 0), status=AppointmentStatus.nao_compareceu),
         ]
     )
     await db_session.commit()
