@@ -46,7 +46,12 @@ export function OverviewModal({ onClose }: OverviewModalProps) {
   return (
     <div role="dialog" className="modal-backdrop">
       <div className="modal-panel max-w-lg">
-        <h2 className="modal-title">Visão geral</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="modal-title">Visão geral</h2>
+          <button onClick={onClose} className="btn-ghost" aria-label="Fechar">
+            Fechar
+          </button>
+        </div>
 
         {isLoading || !data ? (
           <p className="loading-state">Carregando...</p>
@@ -65,12 +70,6 @@ export function OverviewModal({ onClose }: OverviewModalProps) {
             </ul>
           </>
         )}
-
-        <div className="modal-actions">
-          <button onClick={onClose} className="btn-ghost">
-            Fechar
-          </button>
-        </div>
       </div>
     </div>
   );
