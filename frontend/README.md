@@ -1,32 +1,22 @@
-# React + TypeScript + Vite
+# Barbearia Vintage — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React + TypeScript + TailwindCSS.
 
-Currently, two official plugins are available:
+## Setup local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. `npm install`
+2. Copie `.env.example` para `.env` e defina `VITE_API_URL` (ex.: `http://localhost:8000`)
+3. `npm run dev`
 
-## React Compiler
+## Testes
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+npm test
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Deploy (Vercel)
+
+- Root directory: `frontend`
+- Preset: Vite
+- Env var: `VITE_API_URL` = URL do backend no Render
+- `vercel.json` reescreve todas as rotas para `index.html` (necessário para as rotas do React Router não darem 404 no refresh)

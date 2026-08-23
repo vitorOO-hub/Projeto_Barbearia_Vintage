@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import ForeignKey, DateTime, Date, Time, Enum as SAEnum, func
+from sqlalchemy import Boolean, ForeignKey, DateTime, Date, Time, Enum as SAEnum, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -24,6 +24,7 @@ class Appointment(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id", ondelete="RESTRICT"), nullable=False)
     service_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("services.id", ondelete="RESTRICT"), nullable=False)
+    barber_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("barbers.id", ondelete="RESTRICT"), nullable=False)
     appointment_date: Mapped[date] = mapped_column(Date, nullable=False)
     appointment_time: Mapped[time] = mapped_column(Time, nullable=False)
     status: Mapped[AppointmentStatus] = mapped_column(
@@ -31,6 +32,7 @@ class Appointment(Base):
         nullable=False,
         default=AppointmentStatus.agendado,
     )
+    confirmation_email_sent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

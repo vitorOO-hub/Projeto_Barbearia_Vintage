@@ -4,6 +4,7 @@ export interface AppointmentDetail {
   id: string;
   client_id: string;
   service_id: string;
+  barber_id: string;
   appointment_date: string;
   appointment_time: string;
   status: "agendado" | "concluido" | "cancelado" | "nao_compareceu";
@@ -12,6 +13,7 @@ export interface AppointmentDetail {
   service_name: string;
   service_price: number;
   service_duration_minutes: number;
+  barber_name: string;
 }
 
 export interface ClientOption {
@@ -27,14 +29,46 @@ export interface ServiceOption {
   duration_minutes: number;
 }
 
+export interface AvailabilityResult {
+  available: boolean;
+  conflict_with: string | null;
+}
+
+export async function checkAvailability(params: {
+  barberId: string;
+  date: string;
+  time: string;
+  serviceId: string;
+  appointmentId?: string;
+}): Promise<AvailabilityResult> {
+  const { data } = await apiClient.get<AvailabilityResult>("/api/v1/appointments/check-availability", {
+    params: {
+      barber_id: params.barberId,
+      date: params.date,
+      time: params.time,
+      service_id: params.serviceId,
+      appointment_id: params.appointmentId,
+    },
+  });
+  return data;
+}
+
 export async function fetchAppointments(date: string): Promise<AppointmentDetail[]> {
   const { data } = await apiClient.get<AppointmentDetail[]>("/api/v1/appointments", { params: { date } });
+  return data;
+}
+
+export async function fetchAppointmentsRange(startDate: string, endDate: string): Promise<AppointmentDetail[]> {
+  const { data } = await apiClient.get<AppointmentDetail[]>("/api/v1/appointments", {
+    params: { start_date: startDate, end_date: endDate },
+  });
   return data;
 }
 
 export async function createAppointment(payload: {
   client_id: string;
   service_id: string;
+  barber_id: string;
   appointment_date: string;
   appointment_time: string;
 }): Promise<AppointmentDetail> {
@@ -53,7 +87,13 @@ export async function deleteAppointment(id: string): Promise<void> {
 
 export async function updateAppointment(
   id: string,
-  payload: Partial<{ client_id: string; service_id: string; appointment_date: string; appointment_time: string }>
+  payload: Partial<{
+    client_id: string;
+    service_id: string;
+    barber_id: string;
+    appointment_date: string;
+    appointment_time: string;
+  }>
 ): Promise<AppointmentDetail> {
   const { data } = await apiClient.put<AppointmentDetail>(`/api/v1/appointments/${id}`, payload);
   return data;
