@@ -24,12 +24,20 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
   const [serviceId, setServiceId] = useState(initialValues?.service_id ?? "");
   const [barberId, setBarberId] = useState(initialValues?.barber_id ?? "");
   const [time, setTime] = useState(initialValues?.appointment_time.slice(0, 5) ?? "");
+  const [isClientFieldFocused, setIsClientFieldFocused] = useState(false);
 
   const { data: clients = [] } = useQuery<ClientOption[]>({
     queryKey: ["clients", search],
     queryFn: () => searchClients(search),
-    enabled: search.length > 0,
+    enabled: search.length > 0 && !clientId,
   });
+
+  function selectClient(client: ClientOption) {
+    setClientId(client.id);
+    setSearch(client.name);
+  }
+
+  const showSuggestions = isClientFieldFocused && !clientId && search.length > 0 && clients.length > 0;
 
   const { data: services = [] } = useQuery<ServiceOption[]>({ queryKey: ["services"], queryFn: fetchServices });
   const { data: barbers = [] } = useQuery<Barber[]>({ queryKey: ["barbers"], queryFn: fetchBarbers });
@@ -41,24 +49,44 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
         <h2 className="text-lg font-semibold">{isEdit ? "Editar agendamento" : "Novo agendamento"} — {date}</h2>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">Cliente</label>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar cliente por nome"
-          className="mt-1 w-full rounded border px-3 py-2"
-        />
-        <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="mt-2 w-full rounded border px-3 py-2">
-          <option value="">Selecione o cliente</option>
-          {clientId && !clients.some((c) => c.id === clientId) && (
-            <option value={clientId}>{initialValues?.client_name}</option>
+        <label htmlFor="client" className="mt-4 block text-sm font-medium text-gray-700">
+          Cliente
+        </label>
+        <div className="relative">
+          <input
+            id="client"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setClientId("");
+            }}
+            onFocus={() => setIsClientFieldFocused(true)}
+            onBlur={() => setIsClientFieldFocused(false)}
+            placeholder="Buscar cliente por nome"
+            autoComplete="off"
+            className="mt-1 w-full rounded border px-3 py-2"
+          />
+          {showSuggestions && (
+            <ul className="absolute z-10 mt-1 w-full rounded border bg-white shadow-lg" role="listbox">
+              {clients.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      selectClient(c);
+                    }}
+                    className="block w-full px-3 py-2 text-left hover:bg-gray-100"
+                  >
+                    {c.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        </div>
 
         <label className="mt-4 block text-sm font-medium text-gray-700">Serviço</label>
         <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} className="mt-1 w-full rounded border px-3 py-2">

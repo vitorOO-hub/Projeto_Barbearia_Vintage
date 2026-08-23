@@ -16,6 +16,9 @@ describe("AppointmentFormModal", () => {
       if (url === "/api/v1/barbers") {
         return Promise.resolve({ data: [{ id: "b1", name: "Carlos Silva" }] });
       }
+      if (url === "/api/v1/clients") {
+        return Promise.resolve({ data: [{ id: "c1", name: "João Silva", email: "joao@x.com" }] });
+      }
       return Promise.resolve({ data: [] });
     });
   });
@@ -54,5 +57,48 @@ describe("AppointmentFormModal", () => {
       barber_id: "b1",
       appointment_time: "14:00:00",
     });
+  });
+
+  it("shows client suggestions in the same field while typing and selects one on click", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppointmentFormModal date="2026-08-25" onSubmit={vi.fn()} onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    const clientInput = screen.getByLabelText("Cliente");
+    await userEvent.type(clientInput, "João");
+
+    const suggestion = await screen.findByRole("option", { name: "João Silva" });
+    await userEvent.click(suggestion);
+
+    expect(clientInput).toHaveValue("João Silva");
+    expect(screen.queryByRole("option", { name: "João Silva" })).not.toBeInTheDocument();
+  });
+
+  it("clears the selected client if the client field is edited after a selection", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppointmentFormModal
+          date="2026-08-25"
+          initialValues={{
+            client_id: "c1",
+            client_name: "João Silva",
+            service_id: "s1",
+            barber_id: "b1",
+            appointment_time: "14:00:00",
+          }}
+          onSubmit={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    const clientInput = screen.getByLabelText("Cliente");
+    await userEvent.type(clientInput, "x");
+
+    expect(screen.getByRole("button", { name: "Salvar agendamento" })).toBeDisabled();
   });
 });
