@@ -13,7 +13,7 @@ Projeto desenvolvido como case técnico para processo seletivo de empresa júnio
 
 ## Funcionalidades
 
-- **Autenticação** — login com e-mail/senha, sessão via JWT
+- **Autenticação** — login com e-mail/senha; sessão via access token (curto) + refresh token em cookie `httpOnly` (renova a sessão automaticamente sem exigir login de novo a cada recarregamento de página)
 - **Agenda** — visão em lista e em grade semanal, detecção de conflito de horário considerando a duração de cada serviço, verificação de disponibilidade em tempo real ao montar um agendamento, e-mail de confirmação automático (reenviado se o horário for alterado)
 - **Clientes** — cadastro, edição, busca por nome, remoção (soft delete — o histórico de atendimentos é preservado)
 - **Serviços** — cadastro com duração e preço, ativar/desativar

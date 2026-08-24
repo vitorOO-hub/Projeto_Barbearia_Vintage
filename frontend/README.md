@@ -71,6 +71,14 @@ src/
 
 Não existe usuário/senha padrão no código — crie o primeiro usuário rodando `python scripts/seed.py` no backend (ele pede os dados interativamente) e use essas credenciais para entrar.
 
+## Sessão (access + refresh token)
+
+O `apiClient` (`src/api/client.ts`) guarda o access token em memória (nunca em `localStorage`) e envia `withCredentials: true` em toda requisição, para que o cookie `httpOnly` de refresh — setado pelo backend no login — seja enviado automaticamente. Isso significa:
+
+- Ao recarregar a página, o `AuthContext` chama `POST /auth/refresh` antes de `/auth/me` para restaurar a sessão a partir do cookie, sem precisar logar de novo.
+- Qualquer requisição que receba `401` dispara uma tentativa automática de renovar o access token e repete a chamada original uma vez.
+- Rodando o backend localmente, o cookie exige que `ENVIRONMENT=development` esteja configurado no `.env` do backend — sem isso, o navegador recusa aceitar o cookie `Secure` sobre `http://localhost`.
+
 ## Deploy (Vercel)
 
 - Root directory: `frontend`

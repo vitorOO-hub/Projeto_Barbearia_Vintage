@@ -74,6 +74,26 @@ Os testes usam SQLite em memória (não é preciso um Postgres rodando para test
 pytest -v
 ```
 
+## Autenticação
+
+O login usa dois tokens JWT com propósitos diferentes:
+
+- **Access token** — curto (`JWT_EXPIRE_MINUTES`, padrão 45 min), devolvido no corpo da resposta de `/auth/login` e enviado pelo cliente em `Authorization: Bearer <token>` a cada requisição. É o que as rotas protegidas (`get_current_user`) validam.
+- **Refresh token** — longo (`REFRESH_TOKEN_EXPIRE_DAYS`, padrão 7 dias), entregue em um cookie `httpOnly` (inacessível via JavaScript, protegendo contra roubo por XSS). Serve só para obter um novo access token quando o atual expira.
+
+Endpoints envolvidos:
+
+| Rota | O que faz |
+|---|---|
+| `POST /auth/login` | Autentica com e-mail/senha; devolve o access token no corpo e seta o cookie de refresh |
+| `POST /auth/refresh` | Lê o cookie de refresh e devolve um novo access token (renovando o cookie a cada uso) |
+| `POST /auth/logout` | Apaga o cookie de refresh |
+| `GET /auth/me` | Devolve os dados do usuário autenticado (exige access token válido) |
+
+Cada token carrega um claim `type` (`access` ou `refresh`) — um não pode ser usado no lugar do outro, mesmo que alguém consiga capturar um dos dois.
+
+O cookie de refresh é `Secure` (exige HTTPS) e `SameSite=None` em produção, porque frontend e backend ficam em domínios diferentes (Vercel e Render). Em desenvolvimento local (`ENVIRONMENT=development`), o cookie fica `SameSite=Lax` e sem `Secure`, já que `http://localhost` não tem HTTPS.
+
 ## Migrações (Alembic)
 
 Depois de alterar um model em `app/models/`, gere a migração correspondente:
