@@ -68,19 +68,6 @@ describe("Clientes page", () => {
     );
   });
 
-  it("asks for confirmation before removing a client, then deactivates it", async () => {
-    renderClientes();
-    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
-
-    await userEvent.click(screen.getByRole("button", { name: "Remover cliente" }));
-    expect(screen.getByText(/tem certeza/i)).toBeInTheDocument();
-
-    vi.mocked(apiClient.put).mockResolvedValue({ data: { id: "c1", active: false } });
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
-
-    await waitFor(() => expect(apiClient.put).toHaveBeenCalledWith("/api/v1/clients/c1", { active: false }));
-  });
-
   it("asks for confirmation before permanently deleting a client", async () => {
     renderClientes();
     await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
@@ -92,25 +79,6 @@ describe("Clientes page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
 
     await waitFor(() => expect(apiClient.delete).toHaveBeenCalledWith("/api/v1/clients/c1"));
-  });
-
-  it("shows an inactive client with an Ativar button instead of Remover, and reactivates it", async () => {
-    vi.mocked(apiClient.get).mockResolvedValue({
-      data: [{ id: "c1", name: "João Silva", email: "joao@x.com", phone: null, notes: null, active: false }],
-    });
-
-    renderClientes();
-    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
-
-    expect(screen.getByText("Inativo")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Remover cliente" })).not.toBeInTheDocument();
-
-    vi.mocked(apiClient.put).mockResolvedValue({
-      data: { id: "c1", name: "João Silva", email: "joao@x.com", phone: null, notes: null, active: true },
-    });
-    await userEvent.click(screen.getByRole("button", { name: "Ativar cliente" }));
-
-    await waitFor(() => expect(apiClient.put).toHaveBeenCalledWith("/api/v1/clients/c1", { active: true }));
   });
 
   it("opens the edit modal pre-filled with the client's data and saves the changes", async () => {
