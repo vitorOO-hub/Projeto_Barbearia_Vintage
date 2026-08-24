@@ -85,6 +85,41 @@ describe("AppointmentFormModal", () => {
     expect(await screen.findByText("Este cabeleireiro já tem atendimento das 10:00 – 10:45")).toBeInTheDocument();
   });
 
+  it("shows a distinct message when the chosen time has already passed", async () => {
+    vi.mocked(apiClient.get).mockImplementation((url: string) => {
+      if (url === "/api/v1/barbers") {
+        return Promise.resolve({ data: [{ id: "b1", name: "Carlos Silva" }] });
+      }
+      if (url === "/api/v1/clients") {
+        return Promise.resolve({ data: [{ id: "c1", name: "João Silva", email: "joao@x.com" }] });
+      }
+      if (url === "/api/v1/appointments/check-availability") {
+        return Promise.resolve({ data: { available: false, conflict_with: null } });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppointmentFormModal
+          date="2026-08-25"
+          initialValues={{
+            client_id: "c1",
+            client_name: "João Silva",
+            service_id: "s1",
+            barber_id: "b1",
+            appointment_time: "14:00:00",
+          }}
+          onSubmit={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText("Este horário já passou. Escolha um horário futuro.")).toBeInTheDocument();
+  });
+
   it("re-checks availability against the new date when the Dia field is changed", async () => {
     vi.mocked(apiClient.get).mockImplementation((url: string, config?: Parameters<typeof apiClient.get>[1]) => {
       if (url === "/api/v1/barbers") {

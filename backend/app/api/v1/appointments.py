@@ -1,5 +1,5 @@
 import uuid
-from datetime import date as date_type, time
+from datetime import date as date_type, datetime, time
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select, and_
@@ -57,6 +57,16 @@ async def _has_conflict(
     return None
 
 
+PAST_APPOINTMENT_ERROR = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Não é possível agendar um horário que já passou. Escolha um horário futuro.",
+)
+
+
+def _is_in_the_past(appointment_date: date_type, appointment_time: time) -> bool:
+    return datetime.combine(appointment_date, appointment_time) < datetime.now()
+
+
 def _format_conflict_detail(conflict_time: time, conflict_duration_minutes: int) -> str:
     start_minutes = conflict_time.hour * 60 + conflict_time.minute
     end_minutes = start_minutes + conflict_duration_minutes
@@ -88,6 +98,9 @@ async def create_appointment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if _is_in_the_past(data.appointment_date, data.appointment_time):
+        raise PAST_APPOINTMENT_ERROR
+
     service_row = await _get_service_or_404(data.service_id, db)
 
     conflict = await _has_conflict(
@@ -182,6 +195,9 @@ async def check_availability(
     appointment_id: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
 ):
+    if _is_in_the_past(date, time):
+        return AppointmentCheckAvailabilityOut(available=False)
+
     service_row = await _get_service_or_404(service_id, db)
     conflict = await _has_conflict(
         db, date, time, barber_id, service_row.duration_minutes, exclude_id=appointment_id
@@ -214,6 +230,9 @@ async def update_appointment(
     new_barber_id = updates.get("barber_id", appt.barber_id)
     new_service_id = updates.get("service_id", appt.service_id)
     time_changed = (new_date, new_time) != (appt.appointment_date, appt.appointment_time)
+
+    if time_changed and _is_in_the_past(new_date, new_time):
+        raise PAST_APPOINTMENT_ERROR
 
     service_row = None
     if (new_date, new_time, new_barber_id, new_service_id) != (
