@@ -10,8 +10,6 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 45
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ENVIRONMENT: str = "production"
-    N8N_WEBHOOK_URL: str = ""
-    N8N_SHARED_SECRET: str = ""
     ALLOWED_ORIGINS: str = "http://localhost:5173"
 
     @property

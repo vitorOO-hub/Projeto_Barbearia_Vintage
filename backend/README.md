@@ -38,8 +38,6 @@ API REST em **FastAPI** com **SQLAlchemy assíncrono**, banco **PostgreSQL** e m
    | `JWT_EXPIRE_MINUTES` | Tempo de expiração do access token, em minutos (padrão: `45`) |
    | `REFRESH_TOKEN_EXPIRE_DAYS` | Validade do refresh token (cookie httpOnly), em dias (padrão: `7`) |
    | `ENVIRONMENT` | `development` em dev local, `production` em produção — controla se o cookie de refresh exige HTTPS (`Secure`) |
-   | `N8N_WEBHOOK_URL` | URL do webhook do n8n que envia o e-mail de confirmação de agendamento (opcional em dev) |
-   | `N8N_SHARED_SECRET` | Segredo enviado no header `X-Webhook-Secret` para o n8n validar a origem da chamada |
    | `ALLOWED_ORIGINS` | Lista de origens permitidas por CORS, separadas por vírgula (ex.: `http://localhost:5173`) |
 
    > **Nunca** commite o arquivo `.env` — ele já está no `.gitignore`. As credenciais de produção ficam só nas variáveis de ambiente do serviço de deploy.
@@ -112,7 +110,6 @@ app/
   api/v1/          # rotas HTTP (um arquivo por recurso)
   core/            # configuração (env vars) e segurança (hash de senha, JWT)
   db/              # engine e sessão do SQLAlchemy
-  integrations/    # chamada ao webhook do n8n
   models/          # tabelas (SQLAlchemy ORM)
   schemas/         # validação de entrada/saída (Pydantic)
 alembic/versions/  # histórico de migrações do banco
@@ -126,6 +123,6 @@ scripts/seed.py    # popula um usuário inicial e os serviços padrão
 - Build command: `pip install -r requirements.txt`
 - Pre-deploy command: `alembic upgrade head` (garante que o banco de produção sempre tenha o schema mais recente antes da nova versão da API entrar no ar)
 - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- Variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, `N8N_WEBHOOK_URL`, `N8N_SHARED_SECRET`, `ALLOWED_ORIGINS`) são preenchidas direto no painel do Render — nunca no repositório.
+- Variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`) são preenchidas direto no painel do Render — nunca no repositório.
 
 Configuração completa em [`render.yaml`](./render.yaml).
