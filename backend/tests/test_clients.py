@@ -124,6 +124,22 @@ async def test_delete_client_is_soft_delete(client, db_session):
 
 
 @pytest.mark.anyio
+async def test_can_reactivate_a_deactivated_client(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
+    client_id = resp.json()["id"]
+    await client.delete(f"/api/v1/clients/{client_id}", headers=headers)
+
+    response = await client.put(f"/api/v1/clients/{client_id}", json={"active": True}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["active"] is True
+
+    listing = await client.get("/api/v1/clients", headers=headers)
+    names = [c["name"] for c in listing.json()]
+    assert "João" in names
+
+
+@pytest.mark.anyio
 async def test_update_nonexistent_client_returns_404(client, db_session):
     headers = await _auth_headers(client, db_session)
     import uuid

@@ -16,6 +16,7 @@ class ClientUpdate(BaseModel):
     email: EmailStr | None = None
     phone: str | None = None
     notes: str | None = None
+    active: bool | None = None
 
 
 class ClientOut(BaseModel):

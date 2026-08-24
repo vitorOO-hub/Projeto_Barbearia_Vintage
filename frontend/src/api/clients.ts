@@ -10,7 +10,9 @@ export interface Client {
 }
 
 export async function fetchClients(search: string): Promise<Client[]> {
-  const { data } = await apiClient.get<Client[]>("/api/v1/clients", { params: { search } });
+  const { data } = await apiClient.get<Client[]>("/api/v1/clients", {
+    params: { search, include_inactive: true },
+  });
   return data;
 }
 
@@ -26,4 +28,9 @@ export async function updateClient(id: string, payload: Partial<{ name: string; 
 
 export async function deactivateClient(id: string): Promise<void> {
   await apiClient.delete(`/api/v1/clients/${id}`);
+}
+
+export async function activateClient(id: string): Promise<Client> {
+  const { data } = await apiClient.put<Client>(`/api/v1/clients/${id}`, { active: true });
+  return data;
 }
