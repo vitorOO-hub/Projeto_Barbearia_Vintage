@@ -91,7 +91,9 @@ export function Servicos() {
         {services.map((s) => (
           <li key={s.id} className="list-row">
             <div className="min-w-0">
-              <p className="font-medium text-ink">{s.name}</p>
+              <p className="font-medium text-ink">
+                {s.name} {!s.active && <span className="badge-neutral ml-1">Inativo</span>}
+              </p>
               <p className="text-sm text-ink-soft">
                 {s.duration_minutes} min · {formatCurrencyBR(s.price)}
               </p>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createClient, deactivateClient, fetchClients, updateClient, type Client } from "../api/clients";
+import { activateClient, createClient, deactivateClient, fetchClients, updateClient, type Client } from "../api/clients";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ClientFormModal } from "../components/ClientFormModal";
 import { translateApiError } from "../api/errors";
@@ -50,6 +50,15 @@ export function Clientes() {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente atualizado.");
       setEditTarget(null);
+    },
+    onError: (error) => toast.error(translateApiError(error)),
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: (id: string) => activateClient(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients-page"] });
+      toast.success("Cliente ativado.");
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -118,7 +127,9 @@ export function Clientes() {
         {clients.map((c) => (
           <li key={c.id} className="list-row">
             <div className="min-w-0">
-              <p className="font-medium text-ink">{c.name}</p>
+              <p className="font-medium text-ink">
+                {c.name} {!c.active && <span className="badge-neutral ml-1">Inativo</span>}
+              </p>
               {c.email && <p className="text-sm text-ink-soft break-words">{c.email}</p>}
               {c.phone && <p className="text-sm text-ink-soft">{c.phone}</p>}
             </div>
@@ -126,9 +137,19 @@ export function Clientes() {
               <button onClick={() => setEditTarget(c)} className="link-action" aria-label="Editar cliente">
                 Editar cliente
               </button>
-              <button onClick={() => setRemoveTarget(c)} className="link-danger" aria-label="Remover cliente">
-                Remover cliente
-              </button>
+              {c.active ? (
+                <button onClick={() => setRemoveTarget(c)} className="link-danger" aria-label="Remover cliente">
+                  Remover cliente
+                </button>
+              ) : (
+                <button
+                  onClick={() => activateMutation.mutate(c.id)}
+                  className="link-action"
+                  aria-label="Ativar cliente"
+                >
+                  Ativar cliente
+                </button>
+              )}
             </div>
           </li>
         ))}

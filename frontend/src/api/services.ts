@@ -9,7 +9,9 @@ export interface Service {
 }
 
 export async function fetchServices(): Promise<Service[]> {
-  const { data } = await apiClient.get<Service[]>("/api/v1/services");
+  const { data } = await apiClient.get<Service[]>("/api/v1/services", {
+    params: { include_inactive: true },
+  });
   return data;
 }
 
