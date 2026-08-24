@@ -2,14 +2,13 @@ import uuid
 from datetime import date as date_type, datetime, time
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_current_user
 from app.db.session import get_db
-from app.integrations.n8n import notify_n8n
 from app.models import Appointment, Barber, Client, Service, User
 from app.models.appointment import ACTIVE_STATUSES
 from app.schemas.appointment import (
@@ -99,7 +98,6 @@ async def _get_service_or_404(service_id: uuid.UUID, db: AsyncSession) -> Servic
 @router.post("", response_model=AppointmentOut, status_code=status.HTTP_201_CREATED)
 async def create_appointment(
     data: AppointmentCreate,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -126,20 +124,6 @@ async def create_appointment(
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este cabeleireiro já tem um agendamento neste horário.")
     await db.refresh(appt)
-
-    client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
-    background_tasks.add_task(
-        notify_n8n,
-        {
-            "appointment_id": str(appt.id),
-            "client_name": client_row.name,
-            "client_email": client_row.email,
-            "service_name": service_row.name,
-            "appointment_date": appt.appointment_date.isoformat(),
-            "appointment_time": appt.appointment_time.isoformat(),
-            "status": appt.status.value,
-        },
-    )
     return appt
 
 
@@ -231,7 +215,6 @@ async def check_availability(
 async def update_appointment(
     appointment_id: uuid.UUID,
     data: AppointmentUpdate,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     appt = await _get_appointment_or_404(appointment_id, db)
@@ -246,7 +229,6 @@ async def update_appointment(
     if time_changed and _is_in_the_past(new_date, new_time):
         raise PAST_APPOINTMENT_ERROR
 
-    service_row = None
     if (new_date, new_time, new_barber_id, new_service_id) != (
         appt.appointment_date,
         appt.appointment_time,
@@ -276,23 +258,6 @@ async def update_appointment(
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este cabeleireiro já tem um agendamento neste horário.")
     await db.refresh(appt)
-
-    if time_changed:
-        client_row = (await db.execute(select(Client).where(Client.id == appt.client_id))).scalar_one()
-        if service_row is None:
-            service_row = (await db.execute(select(Service).where(Service.id == appt.service_id))).scalar_one()
-        background_tasks.add_task(
-            notify_n8n,
-            {
-                "appointment_id": str(appt.id),
-                "client_name": client_row.name,
-                "client_email": client_row.email,
-                "service_name": service_row.name,
-                "appointment_date": appt.appointment_date.isoformat(),
-                "appointment_time": appt.appointment_time.isoformat(),
-                "status": appt.status.value,
-            },
-        )
     return appt
 
 

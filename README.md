@@ -43,7 +43,7 @@ Projeto desenvolvido como case técnico para processo seletivo de empresa júnio
 - [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/) — testes
 
 **Integrações**
-- [n8n](https://n8n.io/) — recebe um webhook do backend a cada agendamento criado ou reagendado e dispara o e-mail de confirmação ao cliente
+- [n8n](https://n8n.io/) — roda de forma independente do backend, conectado diretamente ao banco (Neon/Postgres): consulta periodicamente por agendamentos com `confirmation_email_sent = false` e dispara o e-mail de confirmação ao cliente
 
 **Infraestrutura**
 - [Render](https://render.com/) — hospedagem do backend, com deploy automático a partir do GitHub
@@ -54,16 +54,16 @@ Projeto desenvolvido como case técnico para processo seletivo de empresa júnio
 ```
 ┌─────────────┐        REST/JSON        ┌──────────────┐        SQL        ┌────────────┐
 │   Frontend   │ ──────────────────────▶ │   Backend    │ ─────────────────▶ │ PostgreSQL │
-│ React (Vercel)│ ◀────────────────────── │ FastAPI (Render)│ ◀───────────────── │            │
-└─────────────┘        JWT no header     └──────┬───────┘                    └────────────┘
-                                                  │ webhook (agendamento criado/alterado)
-                                                  ▼
-                                           ┌─────────────┐
-                                           │     n8n      │ ──▶ e-mail de confirmação
-                                           └─────────────┘
+│ React (Vercel)│ ◀────────────────────── │ FastAPI (Render)│ ◀───────────────── │  (Neon)    │
+└─────────────┘        JWT no header     └──────────────┘                    └─────┬──────┘
+                                                                                     │ SQL (leitura/escrita direta)
+                                                                                     ▼
+                                                                              ┌─────────────┐
+                                                                              │     n8n      │ ──▶ e-mail de confirmação
+                                                                              └─────────────┘
 ```
 
-Frontend e backend são projetos independentes que só se comunicam por HTTP — cada um tem seu próprio `README` com instruções de execução.
+Frontend e backend são projetos independentes que só se comunicam por HTTP — cada um tem seu próprio `README` com instruções de execução. O n8n roda à parte, sem se comunicar com o backend: ele mesmo consulta e atualiza o banco.
 
 ## Como rodar localmente
 

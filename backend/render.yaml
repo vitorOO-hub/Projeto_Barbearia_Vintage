@@ -14,9 +14,5 @@ services:
         sync: false
       - key: JWT_EXPIRE_MINUTES
         value: "45"
-      - key: N8N_WEBHOOK_URL
-        sync: false
-      - key: N8N_SHARED_SECRET
-        sync: false
       - key: ALLOWED_ORIGINS
         sync: false
