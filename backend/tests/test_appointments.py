@@ -142,6 +142,39 @@ async def test_check_availability_flags_a_past_slot_as_unavailable(client, db_se
 
 
 @pytest.mark.anyio
+async def test_check_availability_does_not_flag_an_existing_appointments_own_past_slot(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    yesterday = date.today() - timedelta(days=1)
+
+    from app.models import Appointment
+
+    appt = Appointment(
+        client_id=c.id,
+        service_id=s.id,
+        barber_id=b.id,
+        appointment_date=yesterday,
+        appointment_time=datetime.strptime("14:00:00", "%H:%M:%S").time(),
+    )
+    db_session.add(appt)
+    await db_session.commit()
+    await db_session.refresh(appt)
+
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={
+            "barber_id": str(b.id),
+            "date": yesterday.isoformat(),
+            "time": "14:00:00",
+            "service_id": str(s.id),
+            "appointment_id": str(appt.id),
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["available"] is True
+
+
+@pytest.mark.anyio
 async def test_create_appointment_conflict_same_slot_returns_409(client, db_session):
     headers, c, s, b = await _setup(client, db_session)
     payload = {
