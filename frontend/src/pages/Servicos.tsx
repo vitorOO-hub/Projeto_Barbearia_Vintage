@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createService, deleteService, fetchServices, toggleServiceActive, type Service } from "../api/services";
+import { createService, deleteService, fetchServices, toggleServiceActive, updateService, type Service } from "../api/services";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { ServiceFormModal } from "../components/ServiceFormModal";
 import { formatCurrencyBR } from "../lib/format";
 import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
@@ -11,6 +12,7 @@ export function Servicos() {
   const [duration, setDuration] = useState<number | "">("");
   const [price, setPrice] = useState<number | "">("");
   const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
+  const [editTarget, setEditTarget] = useState<Service | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -33,6 +35,21 @@ export function Servicos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services-page"] });
       toast.success("Serviço atualizado.");
+    },
+    onError: (error) => toast.error(translateApiError(error)),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (payload: { id: string; name: string; duration_minutes: number; price: number }) =>
+      updateService(payload.id, {
+        name: payload.name,
+        duration_minutes: payload.duration_minutes,
+        price: payload.price,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["services-page"] });
+      toast.success("Serviço atualizado.");
+      setEditTarget(null);
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -111,6 +128,9 @@ export function Servicos() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <button onClick={() => setEditTarget(s)} className="link-action" aria-label="Editar serviço">
+                Editar serviço
+              </button>
               <button onClick={() => toggleMutation.mutate({ id: s.id, active: !s.active })} className="link-action">
                 {s.active ? "Desativar" : "Ativar"}
               </button>
@@ -122,6 +142,14 @@ export function Servicos() {
         ))}
         {services.length === 0 && <p className="empty-state">Nenhum serviço cadastrado.</p>}
       </ul>
+
+      {editTarget && (
+        <ServiceFormModal
+          initialValues={{ name: editTarget.name, duration_minutes: editTarget.duration_minutes, price: editTarget.price }}
+          onClose={() => setEditTarget(null)}
+          onSubmit={(data) => editMutation.mutate({ id: editTarget.id, ...data })}
+        />
+      )}
 
       <ConfirmModal
         open={deleteTarget !== null}

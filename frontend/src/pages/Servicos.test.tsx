@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../context/ToastContext";
@@ -41,6 +41,33 @@ describe("Servicos page", () => {
 
     renderServicos();
     await waitFor(() => expect(screen.getByText("Inativo")).toBeInTheDocument());
+  });
+
+  it("opens the edit modal pre-filled with the service's data and saves the changes", async () => {
+    renderServicos();
+    await waitFor(() => expect(screen.getByText("Corte")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar serviço" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByLabelText("Nome")).toHaveValue("Corte");
+    expect(within(dialog).getByLabelText("Duração em minutos")).toHaveValue(30);
+    expect(within(dialog).getByLabelText("Preço em reais")).toHaveValue(40);
+
+    await userEvent.clear(within(dialog).getByLabelText("Preço em reais"));
+    await userEvent.type(within(dialog).getByLabelText("Preço em reais"), "45");
+
+    vi.mocked(apiClient.put).mockResolvedValue({
+      data: { id: "s1", name: "Corte", duration_minutes: 30, price: 45, active: true },
+    });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Salvar serviço" }));
+
+    await waitFor(() =>
+      expect(apiClient.put).toHaveBeenCalledWith("/api/v1/services/s1", {
+        name: "Corte",
+        duration_minutes: 30,
+        price: 45,
+      })
+    );
   });
 
   it("asks for confirmation before permanently deleting a service", async () => {
