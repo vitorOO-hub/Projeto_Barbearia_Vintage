@@ -148,7 +148,9 @@ export function AppointmentFormModal({ date, initialValues, onSubmit, onClose }:
           <p className={`field-hint ${availability.available ? "text-green-700" : "text-red-700"}`}>
             {availability.available
               ? "Horário disponível"
-              : `Este cabeleireiro já tem atendimento das ${availability.conflict_with}`}
+              : availability.conflict_with
+                ? `Este cabeleireiro já tem atendimento das ${availability.conflict_with}`
+                : "Este horário já passou. Escolha um horário futuro."}
           </p>
         )}
 

@@ -1,4 +1,6 @@
 import uuid
+from datetime import date, datetime, timedelta
+
 import pytest
 
 from app.core.security import hash_password
@@ -58,6 +60,85 @@ async def test_create_appointment_with_invalid_service_id_returns_404(client, db
     )
     assert response.status_code == 404
     assert response.json()["detail"] == "Serviço não encontrado."
+
+
+@pytest.mark.anyio
+async def test_cannot_create_appointment_on_a_past_date(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    response = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": yesterday,
+            "appointment_time": "10:00:00",
+        },
+        headers=headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Não é possível agendar um horário que já passou. Escolha um horário futuro."
+
+
+@pytest.mark.anyio
+async def test_cannot_create_appointment_earlier_today_than_now(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    past_time = (datetime.now() - timedelta(hours=1)).strftime("%H:%M:00")
+    response = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": date.today().isoformat(),
+            "appointment_time": past_time,
+        },
+        headers=headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Não é possível agendar um horário que já passou. Escolha um horário futuro."
+
+
+@pytest.mark.anyio
+async def test_cannot_reschedule_appointment_into_the_past(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    resp = await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": str(c.id),
+            "service_id": str(s.id),
+            "barber_id": str(b.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+    appt_id = resp.json()["id"]
+
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    response = await client.put(
+        f"/api/v1/appointments/{appt_id}",
+        json={"appointment_date": yesterday},
+        headers=headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Não é possível agendar um horário que já passou. Escolha um horário futuro."
+
+
+@pytest.mark.anyio
+async def test_check_availability_flags_a_past_slot_as_unavailable(client, db_session):
+    headers, c, s, b = await _setup(client, db_session)
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    response = await client.get(
+        "/api/v1/appointments/check-availability",
+        params={"barber_id": str(b.id), "date": yesterday, "time": "10:00:00", "service_id": str(s.id)},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["available"] is False
+    assert body["conflict_with"] is None
 
 
 @pytest.mark.anyio
@@ -393,11 +474,16 @@ async def test_delete_appointment(client, db_session):
 @pytest.mark.anyio
 async def test_list_appointments_by_date_range(client, db_session):
     headers, c, s, b = await _setup(client, db_session)
+    base = date.today() + timedelta(days=1)
+    d_in_range_1 = base.isoformat()
+    d_in_range_2 = (base + timedelta(days=2)).isoformat()
+    d_out_of_range = (base + timedelta(days=6)).isoformat()
+
     await client.post(
         "/api/v1/appointments",
         json={
             "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
-            "appointment_date": "2026-08-24", "appointment_time": "10:00:00",
+            "appointment_date": d_in_range_1, "appointment_time": "10:00:00",
         },
         headers=headers,
     )
@@ -405,7 +491,7 @@ async def test_list_appointments_by_date_range(client, db_session):
         "/api/v1/appointments",
         json={
             "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
-            "appointment_date": "2026-08-26", "appointment_time": "09:00:00",
+            "appointment_date": d_in_range_2, "appointment_time": "09:00:00",
         },
         headers=headers,
     )
@@ -413,27 +499,32 @@ async def test_list_appointments_by_date_range(client, db_session):
         "/api/v1/appointments",
         json={
             "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
-            "appointment_date": "2026-08-30", "appointment_time": "09:00:00",
+            "appointment_date": d_out_of_range, "appointment_time": "09:00:00",
         },
         headers=headers,
     )
 
     response = await client.get(
-        "/api/v1/appointments?start_date=2026-08-23&end_date=2026-08-29", headers=headers
+        f"/api/v1/appointments?start_date={base.isoformat()}&end_date={(base + timedelta(days=5)).isoformat()}",
+        headers=headers,
     )
     assert response.status_code == 200
     dates = [a["appointment_date"] for a in response.json()]
-    assert dates == ["2026-08-24", "2026-08-26"]
+    assert dates == [d_in_range_1, d_in_range_2]
 
 
 @pytest.mark.anyio
 async def test_list_appointments_range_ordered_by_date_then_time(client, db_session):
     headers, c, s, b = await _setup(client, db_session)
+    base = date.today() + timedelta(days=1)
+    d_first = base.isoformat()
+    d_second = (base + timedelta(days=1)).isoformat()
+
     await client.post(
         "/api/v1/appointments",
         json={
             "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
-            "appointment_date": "2026-08-25", "appointment_time": "15:00:00",
+            "appointment_date": d_second, "appointment_time": "15:00:00",
         },
         headers=headers,
     )
@@ -441,16 +532,17 @@ async def test_list_appointments_range_ordered_by_date_then_time(client, db_sess
         "/api/v1/appointments",
         json={
             "client_id": str(c.id), "service_id": str(s.id), "barber_id": str(b.id),
-            "appointment_date": "2026-08-24", "appointment_time": "09:00:00",
+            "appointment_date": d_first, "appointment_time": "09:00:00",
         },
         headers=headers,
     )
 
     response = await client.get(
-        "/api/v1/appointments?start_date=2026-08-23&end_date=2026-08-29", headers=headers
+        f"/api/v1/appointments?start_date={base.isoformat()}&end_date={(base + timedelta(days=5)).isoformat()}",
+        headers=headers,
     )
     ordering = [(a["appointment_date"], a["appointment_time"]) for a in response.json()]
-    assert ordering == [("2026-08-24", "09:00:00"), ("2026-08-25", "15:00:00")]
+    assert ordering == [(d_first, "09:00:00"), (d_second, "15:00:00")]
 
 
 @pytest.mark.anyio
