@@ -24,3 +24,7 @@ export async function toggleServiceActive(id: string, active: boolean): Promise<
   const { data } = await apiClient.put<Service>(`/api/v1/services/${id}`, { active });
   return data;
 }
+
+export async function deleteService(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/services/${id}`);
+}

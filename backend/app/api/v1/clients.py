@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_current_user
@@ -56,7 +57,14 @@ async def update_client(client_id: uuid.UUID, data: ClientUpdate, db: AsyncSessi
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deactivate_client(client_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def delete_client(client_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     client = await _get_client_or_404(client_id, db)
-    client.active = False
-    await db.commit()
+    try:
+        await db.delete(client)
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Não é possível excluir este cliente pois há agendamentos vinculados a ele.",
+        )

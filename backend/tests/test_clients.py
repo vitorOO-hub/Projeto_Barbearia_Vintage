@@ -1,7 +1,7 @@
 import pytest
 
 from app.core.security import hash_password
-from app.models import User
+from app.models import User, Service, Barber
 
 
 async def _auth_headers(client, db_session):
@@ -54,7 +54,7 @@ async def test_list_clients_excludes_inactive_by_default(client, db_session):
     await client.post("/api/v1/clients", json={"name": "Ativo", "email": "ativo@x.com"}, headers=headers)
     resp2 = await client.post("/api/v1/clients", json={"name": "Sera Removido", "email": "removido@x.com"}, headers=headers)
     inactive_id = resp2.json()["id"]
-    await client.delete(f"/api/v1/clients/{inactive_id}", headers=headers)
+    await client.put(f"/api/v1/clients/{inactive_id}", json={"active": False}, headers=headers)
 
     response = await client.get("/api/v1/clients", headers=headers)
     names = [c["name"] for c in response.json()]
@@ -67,7 +67,7 @@ async def test_list_clients_include_inactive(client, db_session):
     headers = await _auth_headers(client, db_session)
     resp = await client.post("/api/v1/clients", json={"name": "Sera Removido", "email": "removido@x.com"}, headers=headers)
     inactive_id = resp.json()["id"]
-    await client.delete(f"/api/v1/clients/{inactive_id}", headers=headers)
+    await client.put(f"/api/v1/clients/{inactive_id}", json={"active": False}, headers=headers)
 
     response = await client.get("/api/v1/clients?include_inactive=true", headers=headers)
     names = [c["name"] for c in response.json()]
@@ -110,7 +110,22 @@ async def test_update_client_phone(client, db_session):
 
 
 @pytest.mark.anyio
-async def test_delete_client_is_soft_delete(client, db_session):
+async def test_can_deactivate_a_client_via_update(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
+    client_id = resp.json()["id"]
+
+    response = await client.put(f"/api/v1/clients/{client_id}", json={"active": False}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["active"] is False
+
+    check = await client.get("/api/v1/clients?include_inactive=true", headers=headers)
+    target = next(c for c in check.json() if c["id"] == client_id)
+    assert target["active"] is False
+
+
+@pytest.mark.anyio
+async def test_delete_client_removes_it_permanently(client, db_session):
     headers = await _auth_headers(client, db_session)
     resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
     client_id = resp.json()["id"]
@@ -119,8 +134,37 @@ async def test_delete_client_is_soft_delete(client, db_session):
     assert response.status_code == 204
 
     check = await client.get("/api/v1/clients?include_inactive=true", headers=headers)
-    target = next(c for c in check.json() if c["id"] == client_id)
-    assert target["active"] is False
+    ids = [c["id"] for c in check.json()]
+    assert client_id not in ids
+
+
+@pytest.mark.anyio
+async def test_cannot_delete_client_with_appointments(client, db_session):
+    headers = await _auth_headers(client, db_session)
+    resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
+    client_id = resp.json()["id"]
+
+    service = Service(name="Corte", duration_minutes=30, price=40)
+    barber = Barber(name="Carlos Silva")
+    db_session.add_all([service, barber])
+    await db_session.commit()
+    await db_session.refresh(service)
+    await db_session.refresh(barber)
+
+    await client.post(
+        "/api/v1/appointments",
+        json={
+            "client_id": client_id,
+            "service_id": str(service.id),
+            "barber_id": str(barber.id),
+            "appointment_date": "2026-08-25",
+            "appointment_time": "14:00:00",
+        },
+        headers=headers,
+    )
+
+    response = await client.delete(f"/api/v1/clients/{client_id}", headers=headers)
+    assert response.status_code == 409
 
 
 @pytest.mark.anyio
@@ -128,7 +172,7 @@ async def test_can_reactivate_a_deactivated_client(client, db_session):
     headers = await _auth_headers(client, db_session)
     resp = await client.post("/api/v1/clients", json={"name": "João", "email": "joao@x.com"}, headers=headers)
     client_id = resp.json()["id"]
-    await client.delete(f"/api/v1/clients/{client_id}", headers=headers)
+    await client.put(f"/api/v1/clients/{client_id}", json={"active": False}, headers=headers)
 
     response = await client.put(f"/api/v1/clients/{client_id}", json={"active": True}, headers=headers)
     assert response.status_code == 200

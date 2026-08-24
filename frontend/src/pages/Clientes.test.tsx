@@ -68,15 +68,28 @@ describe("Clientes page", () => {
     );
   });
 
-  it("asks for confirmation before removing a client, then soft-deletes it", async () => {
+  it("asks for confirmation before removing a client, then deactivates it", async () => {
     renderClientes();
     await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
 
     await userEvent.click(screen.getByRole("button", { name: "Remover cliente" }));
     expect(screen.getByText(/tem certeza/i)).toBeInTheDocument();
 
-    vi.mocked(apiClient.delete).mockResolvedValue({ data: null });
+    vi.mocked(apiClient.put).mockResolvedValue({ data: { id: "c1", active: false } });
     await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+
+    await waitFor(() => expect(apiClient.put).toHaveBeenCalledWith("/api/v1/clients/c1", { active: false }));
+  });
+
+  it("asks for confirmation before permanently deleting a client", async () => {
+    renderClientes();
+    await waitFor(() => expect(screen.getByText("João Silva")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Excluir cliente" }));
+    expect(screen.getByText(/não pode ser desfeita/i)).toBeInTheDocument();
+
+    vi.mocked(apiClient.delete).mockResolvedValue({ data: null });
+    await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
 
     await waitFor(() => expect(apiClient.delete).toHaveBeenCalledWith("/api/v1/clients/c1"));
   });

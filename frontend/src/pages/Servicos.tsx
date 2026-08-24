@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createService, fetchServices, toggleServiceActive } from "../api/services";
+import { createService, deleteService, fetchServices, toggleServiceActive, type Service } from "../api/services";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { formatCurrencyBR } from "../lib/format";
 import { translateApiError } from "../api/errors";
 import { useToast } from "../context/ToastContext";
@@ -9,6 +10,7 @@ export function Servicos() {
   const [name, setName] = useState("");
   const [duration, setDuration] = useState<number | "">("");
   const [price, setPrice] = useState<number | "">("");
+  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -31,6 +33,16 @@ export function Servicos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services-page"] });
       toast.success("Serviço atualizado.");
+    },
+    onError: (error) => toast.error(translateApiError(error)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteService(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["services-page"] });
+      toast.success("Serviço excluído.");
+      setDeleteTarget(null);
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -98,13 +110,27 @@ export function Servicos() {
                 {s.duration_minutes} min · {formatCurrencyBR(s.price)}
               </p>
             </div>
-            <button onClick={() => toggleMutation.mutate({ id: s.id, active: !s.active })} className="link-action">
-              {s.active ? "Desativar" : "Ativar"}
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button onClick={() => toggleMutation.mutate({ id: s.id, active: !s.active })} className="link-action">
+                {s.active ? "Desativar" : "Ativar"}
+              </button>
+              <button onClick={() => setDeleteTarget(s)} className="link-danger" aria-label="Excluir serviço">
+                Excluir serviço
+              </button>
+            </div>
           </li>
         ))}
         {services.length === 0 && <p className="empty-state">Nenhum serviço cadastrado.</p>}
       </ul>
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Excluir serviço"
+        message={`Tem certeza que deseja excluir ${deleteTarget?.name} definitivamente? Essa ação não pode ser desfeita. Se houver agendamentos vinculados, a exclusão será bloqueada.`}
+        confirmLabel="Excluir"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+      />
     </div>
   );
 }

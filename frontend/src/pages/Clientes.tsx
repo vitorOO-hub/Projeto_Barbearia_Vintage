@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { activateClient, createClient, deactivateClient, fetchClients, updateClient, type Client } from "../api/clients";
+import {
+  activateClient,
+  createClient,
+  deactivateClient,
+  deleteClient,
+  fetchClients,
+  updateClient,
+  type Client,
+} from "../api/clients";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ClientFormModal } from "../components/ClientFormModal";
 import { translateApiError } from "../api/errors";
@@ -15,6 +23,7 @@ export function Clientes() {
   const [phone, setPhone] = useState("");
   const emailInvalid = email.length > 0 && !EMAIL_REGEX.test(email);
   const [removeTarget, setRemoveTarget] = useState<Client | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const [editTarget, setEditTarget] = useState<Client | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -59,6 +68,16 @@ export function Clientes() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients-page"] });
       toast.success("Cliente ativado.");
+    },
+    onError: (error) => toast.error(translateApiError(error)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteClient(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients-page"] });
+      toast.success("Cliente excluído.");
+      setDeleteTarget(null);
     },
     onError: (error) => toast.error(translateApiError(error)),
   });
@@ -150,6 +169,9 @@ export function Clientes() {
                   Ativar cliente
                 </button>
               )}
+              <button onClick={() => setDeleteTarget(c)} className="link-danger" aria-label="Excluir cliente">
+                Excluir cliente
+              </button>
             </div>
           </li>
         ))}
@@ -170,6 +192,15 @@ export function Clientes() {
         message={`Tem certeza que deseja remover ${removeTarget?.name}? O histórico de agendamentos será mantido.`}
         onCancel={() => setRemoveTarget(null)}
         onConfirm={() => removeTarget && removeMutation.mutate(removeTarget.id)}
+      />
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Excluir cliente"
+        message={`Tem certeza que deseja excluir ${deleteTarget?.name} definitivamente? Essa ação não pode ser desfeita. Se houver agendamentos vinculados, a exclusão será bloqueada.`}
+        confirmLabel="Excluir"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
       />
     </div>
   );
