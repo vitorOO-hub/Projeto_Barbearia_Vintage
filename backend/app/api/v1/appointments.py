@@ -1,5 +1,6 @@
 import uuid
 from datetime import date as date_type, datetime, time
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select, and_
@@ -63,8 +64,12 @@ PAST_APPOINTMENT_ERROR = HTTPException(
 )
 
 
+BUSINESS_TIMEZONE = ZoneInfo("America/Sao_Paulo")
+
+
 def _is_in_the_past(appointment_date: date_type, appointment_time: time) -> bool:
-    return datetime.combine(appointment_date, appointment_time) < datetime.now()
+    appointment_dt = datetime.combine(appointment_date, appointment_time, tzinfo=BUSINESS_TIMEZONE)
+    return appointment_dt < datetime.now(BUSINESS_TIMEZONE)
 
 
 def _format_conflict_detail(conflict_time: time, conflict_duration_minutes: int) -> str:
@@ -195,7 +200,14 @@ async def check_availability(
     appointment_id: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    if _is_in_the_past(date, time):
+    is_unchanged_slot = False
+    if appointment_id is not None:
+        existing = await db.execute(select(Appointment).where(Appointment.id == appointment_id))
+        existing_appt = existing.scalar_one_or_none()
+        if existing_appt is not None:
+            is_unchanged_slot = (existing_appt.appointment_date, existing_appt.appointment_time) == (date, time)
+
+    if not is_unchanged_slot and _is_in_the_past(date, time):
         return AppointmentCheckAvailabilityOut(available=False)
 
     service_row = await _get_service_or_404(service_id, db)
