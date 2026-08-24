@@ -25,6 +25,14 @@ export async function toggleServiceActive(id: string, active: boolean): Promise<
   return data;
 }
 
+export async function updateService(
+  id: string,
+  payload: Partial<{ name: string; duration_minutes: number; price: number }>
+): Promise<Service> {
+  const { data } = await apiClient.put<Service>(`/api/v1/services/${id}`, payload);
+  return data;
+}
+
 export async function deleteService(id: string): Promise<void> {
   await apiClient.delete(`/api/v1/services/${id}`);
 }
